@@ -205,12 +205,12 @@ class ModeratorAgent:
 
     async def fact_check_argument(self, speaker_name: str, argument_text: str) -> Dict[str, Any]:
         """
-        Scans an agent's argument for factual numbers or metrics, and compares them 
-        against the company profile context.
-        Returns a verification dictionary indicating if any discrepancies were found.
+        Scans an agent's argument for factual numbers or metrics, compares them 
+        against the company profile context, AND scores the argument for sentiment and impact.
         """
         if self.room_c and self.room_c.llm_client:
             try:
+                # Assumes Room C's LLM prompt is updated to also return sentiment and impact
                 return await self.room_c.fact_check_argument(
                     company_profile=self.company_profile,
                     speaker_name=speaker_name,
@@ -219,5 +219,31 @@ class ModeratorAgent:
             except Exception:
                 pass
 
-        # Basic fallback local validation
-        return {"is_valid": True, "correction": None, "penalty": 1.0, "cited_source": None}
+        # Basic fallback local validation & scoring if LLM fails
+        sentiment = 0.0
+        impact = 0.3
+        
+        # Simple keyword scoring for the argument
+        pos_words = ["growth", "increase", "up", "bullish", "profit", "buy", "strong"]
+        neg_words = ["drop", "decrease", "down", "bearish", "loss", "sell", "risk", "weak"]
+        
+        text_lower = argument_text.lower()
+        pos_count = sum(1 for w in pos_words if w in text_lower)
+        neg_count = sum(1 for w in neg_words if w in text_lower)
+        
+        if pos_count > neg_count:
+            sentiment = min(0.2 * (pos_count - neg_count), 1.0)
+        elif neg_count > pos_count:
+            sentiment = max(-0.2 * (neg_count - pos_count), -1.0)
+            
+        # Impact scales with the use of strong keywords
+        impact = min(0.3 + ((pos_count + neg_count) * 0.1), 0.9)
+
+        return {
+            "is_valid": True, 
+            "correction": None, 
+            "penalty": 1.0, 
+            "cited_source": None,
+            "sentiment": round(sentiment, 2),
+            "impact": round(impact, 2)
+        }
