@@ -9,6 +9,7 @@ import time
 import secrets
 import jwt
 from typing import Optional, Dict, Any, List
+import re
 
 # Set up logger
 logger = logging.getLogger("finswarm.main")
@@ -30,7 +31,7 @@ if os.path.exists(env_path):
                     continue
                 if "=" in line:
                     key, val = line.split("=", 1)
-                    os.environ[key.strip()] = val.strip().strip("'\"")
+                    os.environ[key.strip()] = val.strip().strip("\"'")
     except Exception as e:
         logger.warning(f"Failed to load .env file: {e}")
 
@@ -50,7 +51,7 @@ from backend.app.services.llm_client import GeminiLlmClient
 
 app = FastAPI(title="FinSwarm API", version="1.0.0")
 
-# Secure local development CORS configuration (Explicit whitelisting instead of wildcard with credentials)
+# Secure local development CORS configuration
 origins = [
     "http://localhost:8000",
     "http://127.0.0.1:8000",
@@ -59,7 +60,6 @@ origins = [
     "http://127.0.0.1:3000",
     "http://[::1]:3000",
 ]
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -69,7 +69,6 @@ app.add_middleware(
 )
 
 # --- SECURITY UTILITIES & CONFIGURATIONS ---
-
 SECRET_KEY = os.getenv("JWT_SECRET_KEY", "finswarm-super-secret-key-12345-xyz")
 security = HTTPBearer()
 
@@ -104,13 +103,11 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
         raise HTTPException(status_code=401, detail="Invalid or expired authentication token")
     return email
 
-import re
-
 def sanitize_ticker(ticker: str) -> str:
     """Sanitizes ticker inputs to prevent parameter injection."""
     if not ticker:
         return ""
-    cleaned = re.sub(r'[^A-Za-z0-9.\-]', '', ticker)
+    cleaned = re.sub(r'[^A-Za-z0-9.-]', '', ticker)
     return cleaned.upper().strip()[:10]
 
 def sanitize_news_content(content: str) -> str:
@@ -145,7 +142,6 @@ def sanitize_news_content(content: str) -> str:
     return cleaned.strip()
 
 # --- REQUEST SCHEMAS ---
-
 class RegisterRequest(BaseModel):
     email: str
     display_name: str
@@ -188,6 +184,87 @@ class CommandRequest(BaseModel):
     current_agents: Dict[str, Any]
     environmental_variables: Optional[Dict[str, str]] = None
     company_profile: Optional[Dict[str, Any]] = None
+
+class UrlRequest(BaseModel):
+    url: str
+
+# ==========================================
+# MULTIMODAL INGESTION & SCRAPING ENDPOINTS
+# ==========================================
+
+@app.post("/api/upload-file")
+async def upload_file_endpoint(file: UploadFile = File(...), email: str = Depends(get_current_user)):
+    """Universal router that delegates extraction based on file extension."""
+    try:
+        contents = await file.read()
+        filename = file.filename.lower()
+        
+        # --- DOCUMENT PARSERS ---
+        if filename.endswith(".pdf"):
+            from backend.app.services.file_parser import extract_pdf_text
+            text = extract_pdf_text(contents)
+            
+        elif filename.endswith(".docx"):
+            from backend.app.services.file_parser import extract_docx_text
+            text = extract_docx_text(contents)
+            
+        elif filename.endswith((".xlsx", ".xls")):
+            from backend.app.services.file_parser import extract_excel_text
+            text = extract_excel_text(contents)
+            
+        elif filename.endswith((".pptx", ".ppt")):
+            from backend.app.services.file_parser import extract_ppt_text
+            text = extract_ppt_text(contents)
+            
+        elif filename.endswith((".txt", ".csv")):
+            text = contents.decode("utf-8", errors="ignore")
+            
+        # --- MEDIA PARSERS ---
+        elif filename.endswith((".mp3", ".wav", ".m4a")):
+            from backend.app.services.media_parser import transcribe_audio
+            text = await transcribe_audio(contents)
+            
+        elif filename.endswith(".mp4"):
+            from backend.app.services.media_parser import transcribe_video
+            text = await transcribe_video(contents)
+            
+        else:
+            raise HTTPException(status_code=400, detail="Unsupported file format")
+
+        return {"text": text}
+    except ModuleNotFoundError as e:
+        logger.warning(f"Parsing module not yet implemented: {e}")
+        raise HTTPException(status_code=501, detail="This file parser is not yet implemented.")
+    except Exception as e:
+        logger.exception("Error in upload_file_endpoint")
+        raise HTTPException(status_code=500, detail=f"Internal server error parsing file: {str(e)}")
+
+@app.post("/api/parse-url")
+async def parse_url_endpoint(req: UrlRequest, email: str = Depends(get_current_user)):
+    """Delegates a web link to the web scraper to extract the site's text content."""
+    try:
+        from backend.app.services.web_scraper import scrape_url
+        text = await scrape_url(req.url)
+        return {"text": text}
+    except ModuleNotFoundError:
+        raise HTTPException(status_code=501, detail="Web scraper module not yet implemented.")
+    except Exception as e:
+        logger.exception("Error in parse_url_endpoint")
+        raise HTTPException(status_code=500, detail=f"Error scraping URL: {str(e)}")
+
+@app.post("/api/dictate")
+async def dictate_endpoint(audio: UploadFile = File(...), email: str = Depends(get_current_user)):
+    """Dedicated endpoint for live speech-to-text dictation."""
+    try:
+        contents = await audio.read()
+        from backend.app.services.media_parser import transcribe_audio
+        text = await transcribe_audio(contents)
+        return {"text": text}
+    except ModuleNotFoundError:
+        raise HTTPException(status_code=501, detail="Audio transcription module not yet implemented.")
+    except Exception as e:
+        logger.exception("Error in dictate_endpoint")
+        raise HTTPException(status_code=500, detail=f"Error transcribing dictation: {str(e)}")
 
 # --- AUTHENTICATION ENDPOINTS ---
 
@@ -236,24 +313,19 @@ def forgot_password_endpoint(req: ForgotPasswordRequest, background_tasks: Backg
     from backend.app.services.database import get_user, set_reset_pin
     user = get_user(email)
     if not user:
-        # Avoid user enumeration by returning a generic message
         return {"message": "If the email exists, a password reset PIN has been sent."}
     
-    # Cryptographically secure 6-digit PIN
     pin = "".join(secrets.choice("0123456789") for _ in range(6))
-    
-    success = set_reset_pin(email, pin, 600)  # Valid for 10 minutes
+    success = set_reset_pin(email, pin, 600)
     if not success:
         raise HTTPException(status_code=500, detail="Failed to generate reset PIN")
     
-    # Print securely to backend console log for user retrieval (only in development environment)
     if os.getenv("ENV", "development").lower() == "development":
         print(f"\n========================================================")
         print(f"[SECURITY PIN LOG] Password reset request for: {email}")
         print(f"OTP Reset PIN: {pin}")
         print(f"========================================================\n")
     
-    # Send reset PIN via SMTP email in background
     from backend.app.services.email_service import send_reset_email
     background_tasks.add_task(send_reset_email, email, pin)
     
@@ -271,7 +343,6 @@ def reset_password_endpoint(req: ResetPasswordRequest):
     if not user or not user.get("reset_pin") or not user.get("reset_pin_expires"):
         raise HTTPException(status_code=400, detail="Invalid or expired reset PIN")
     
-    # Check expiry
     expires_str = user["reset_pin_expires"]
     try:
         expires = datetime.datetime.strptime(expires_str, "%Y-%m-%d %H:%M:%S")
@@ -280,12 +351,10 @@ def reset_password_endpoint(req: ResetPasswordRequest):
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid or expired reset PIN")
     
-    # Verify PIN by hashing the incoming pin with the user's salt and comparing with stored hash
     expected_hash, _ = hash_password(req.pin, user["salt"])
     if not hmac.compare_digest(user["reset_pin"], expected_hash):
         raise HTTPException(status_code=400, detail="Invalid or expired reset PIN")
     
-    # Update password and clear reset pin
     hash_val, salt = hash_password(req.new_password)
     success = update_user_password(email, hash_val, salt)
     if not success:
@@ -302,7 +371,6 @@ def verify_reset_pin_endpoint(req: VerifyPinRequest):
     if not user or not user.get("reset_pin") or not user.get("reset_pin_expires"):
         raise HTTPException(status_code=400, detail="Invalid or expired reset PIN")
     
-    # Check expiry
     expires_str = user["reset_pin_expires"]
     try:
         expires = datetime.datetime.strptime(expires_str, "%Y-%m-%d %H:%M:%S")
@@ -311,7 +379,6 @@ def verify_reset_pin_endpoint(req: VerifyPinRequest):
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid or expired reset PIN")
     
-    # Verify PIN by hashing the incoming pin with the user's salt and comparing with stored hash
     expected_hash, _ = hash_password(req.pin, user["salt"])
     if not hmac.compare_digest(user["reset_pin"], expected_hash):
         raise HTTPException(status_code=400, detail="Invalid or expired reset PIN")
@@ -335,35 +402,15 @@ def update_profile_endpoint(req: UpdateProfileRequest, email: str = Depends(get_
 
 # --- SYSTEM & SIMULATION ENDPOINTS ---
 
-# Expose personas
 @app.get("/api/personas")
 def get_personas(email: str = Depends(get_current_user)):
     try:
         personas = initialize_personas()
-        return {name: p.__dict__ for name, p in personas.items()}
+        return {name: p.dict() for name, p in personas.items()}
     except Exception as e:
         logger.exception("Error in /api/personas")
         raise HTTPException(status_code=500, detail="Internal server error")
 
-# Expose company profile (supports loading by specific ticker symbol)
-@app.get("/api/company")
-async def get_company(ticker: Optional[str] = None, email: str = Depends(get_current_user), x_gemini_api_key: Optional[str] = Header(None)):
-    try:
-        if not ticker or ticker.upper().strip() == "TSLA":
-            return get_default_company_profile()
-            
-        ticker_cleaned = sanitize_ticker(ticker)
-        api_key = x_gemini_api_key or os.getenv("GEMINI_API_KEY")
-        llm_client = GeminiLlmClient(api_key=api_key) if api_key else None
-        room_c = LlmOrchestrator(llm_client=llm_client)
-        
-        profile = await room_c.generate_profile_for_ticker(ticker_cleaned)
-        return profile
-    except Exception as e:
-        logger.exception("Error in /api/company")
-        raise HTTPException(status_code=500, detail="Internal server error fetching company profile")
-
-# Helper to fetch default profile
 def get_default_company_profile() -> CompanyProfile:
     return CompanyProfile(
         ticker="TSLA",
@@ -371,7 +418,7 @@ def get_default_company_profile() -> CompanyProfile:
         sector="Consumer Cyclical",
         industry="Auto Manufacturers",
         description="Electric vehicle and clean energy company.",
-        key_metrics={"Revenue": "$96B", "Free Cash Flow": "$4.3B", "Stock Price": "$175.00"},
+        key_metrics={"Revenue": " $96B", "Free Cash Flow": "$ 4.3B", "Stock Price": "$175.00"},
         historical_news=[
             {"date": "2026-01-15", "title": "Earnings Beat", "summary": "Tesla exceeded Q4 earnings expectations."}
         ],
@@ -385,7 +432,23 @@ def get_default_company_profile() -> CompanyProfile:
         ]
     )
 
-# Autofill agent persona endpoint
+@app.get("/api/company")
+async def get_company(ticker: Optional[str] = None, email: str = Depends(get_current_user), x_gemini_api_key: Optional[str] = Header(None)):
+    try:
+        if not ticker or ticker.upper().strip() == "TSLA":
+            return get_default_company_profile()
+        
+        ticker_cleaned = sanitize_ticker(ticker)
+        api_key = x_gemini_api_key or os.getenv("GEMINI_API_KEY")
+        llm_client = GeminiLlmClient(api_key=api_key) if api_key else None
+        room_c = LlmOrchestrator(llm_client=llm_client)
+        
+        profile = await room_c.generate_profile_for_ticker(ticker_cleaned)
+        return profile
+    except Exception as e:
+        logger.exception("Error in /api/company")
+        raise HTTPException(status_code=500, detail="Internal server error fetching company profile")
+
 @app.post("/api/agents/autofill")
 async def autofill_agent_endpoint(req: Dict[str, Any], email: str = Depends(get_current_user), x_gemini_api_key: Optional[str] = Header(None)):
     try:
@@ -408,9 +471,8 @@ async def autofill_agent_endpoint(req: Dict[str, Any], email: str = Depends(get_
                 recent_events=comp_raw.get("recent_events", []),
                 historical_news=comp_raw.get("historical_news", [])
             )
-            
-        agent_details = req.get("agent", req)
         
+        agent_details = req.get("agent", req)
         completed_persona = await room_c.autofill_agent_persona(
             partial_persona=agent_details,
             environmental_variables=env_vars,
@@ -421,7 +483,6 @@ async def autofill_agent_endpoint(req: Dict[str, Any], email: str = Depends(get_
         logger.exception("Error in autofill_agent_endpoint")
         raise HTTPException(status_code=500, detail="Internal server error during persona autofill")
 
-# Contextualize personas endpoint
 @app.post("/api/personas/contextualize")
 async def contextualize_personas_endpoint(req: ContextualizeRequest, email: str = Depends(get_current_user), x_gemini_api_key: Optional[str] = Header(None)):
     try:
@@ -443,7 +504,7 @@ async def contextualize_personas_endpoint(req: ContextualizeRequest, email: str 
             )
         else:
             profile = get_default_company_profile()
-            
+        
         default_personas = initialize_personas()
         env_vars = req.environmental_variables or {}
         
@@ -457,7 +518,6 @@ async def contextualize_personas_endpoint(req: ContextualizeRequest, email: str 
         logger.exception("Error in contextualize_personas_endpoint")
         raise HTTPException(status_code=500, detail="Internal server error during contextualization")
 
-# Conversational swarm command endpoint
 @app.post("/api/agents/command")
 async def process_swarm_command_endpoint(req: CommandRequest, email: str = Depends(get_current_user), x_gemini_api_key: Optional[str] = Header(None)):
     try:
@@ -480,9 +540,8 @@ async def process_swarm_command_endpoint(req: CommandRequest, email: str = Depen
             )
         else:
             profile = get_default_company_profile()
-            
-        env_vars = req.environmental_variables or {}
         
+        env_vars = req.environmental_variables or {}
         updated_personas = await room_c.process_swarm_command(
             command=req.command,
             current_agents=req.current_agents,
@@ -502,7 +561,6 @@ def safe_float(val, default: float = 0.0) -> float:
     except (ValueError, TypeError):
         return default
 
-# Run simulation
 @app.post("/api/simulate")
 async def run_simulation_endpoint(req: SimulationRequest, email: str = Depends(get_current_user), x_gemini_api_key: Optional[str] = Header(None)):
     req.news_content = sanitize_news_content(req.news_content)
@@ -510,8 +568,7 @@ async def run_simulation_endpoint(req: SimulationRequest, email: str = Depends(g
     try:
         api_key = x_gemini_api_key or os.getenv("GEMINI_API_KEY")
         llm_client = GeminiLlmClient(api_key=api_key) if api_key else None
-
-        # Build custom or default personas (Room A representation in memory)
+        
         if req.custom_agents:
             personas = {}
             for name, details in req.custom_agents.items():
@@ -530,10 +587,8 @@ async def run_simulation_endpoint(req: SimulationRequest, email: str = Depends(g
                 )
         else:
             personas = initialize_personas()
-
+            
         room_c = LlmOrchestrator(llm_client=llm_client)
-
-        # Dynamic Company Profile Generation
         profile = await room_c.extract_and_generate_profile(req.news_content)
         profile.environmental_variables = req.environmental_variables
         
@@ -546,8 +601,7 @@ async def run_simulation_endpoint(req: SimulationRequest, email: str = Depends(g
             room_c=room_c,
             room_d=room_d
         )
-
-        # Initialize Context Cache if supported by the LLM client
+        
         cache_name = None
         if llm_client:
             try:
@@ -563,8 +617,6 @@ async def run_simulation_endpoint(req: SimulationRequest, email: str = Depends(g
         async def event_generator():
             import uuid
             debate_id = req.debate_id or f"deb_{uuid.uuid4().hex[:8]}"
-            
-            # Yield debate_id so client is aware of it
             yield f"data: {json.dumps({'type': 'debate_id', 'data': debate_id})}\n\n"
             
             news_sentiment = 0.0
@@ -573,7 +625,6 @@ async def run_simulation_endpoint(req: SimulationRequest, email: str = Depends(g
             valuation_results = {}
             turns_dict = {}
 
-            # Pre-populate turns_dict with existing_transcript if resuming
             if req.existing_transcript:
                 for turn in req.existing_transcript:
                     turn_num = turn.get("turn", 0)
@@ -589,20 +640,16 @@ async def run_simulation_endpoint(req: SimulationRequest, email: str = Depends(g
                         "factuality_score": turn.get("factuality_score", 1.0),
                         "cited_source": turn.get("cited_source")
                     }
-
             try:
-                # 1. Yield company profile first
-                yield f"data: {json.dumps({'type': 'company_profile', 'data': profile.__dict__})}\n\n"
+                yield f"data: {json.dumps({'type': 'company_profile', 'data': profile.dict()})}\n\n"
                 
-                # 2. Iterate and yield events from debate generator
                 async for event in room_b.run_simulation_generator(
-                    req.news_content, 
+                    req.news_content,
                     max_rounds=req.max_rounds,
                     existing_transcript=req.existing_transcript,
                     existing_state_history=req.existing_state_history,
                     cached_content=cache_name
                 ):
-                    # Process event for database saving
                     if event["type"] == "news_analysis":
                         news_sentiment = event["data"].get("sentiment", 0.0)
                         news_impact = event["data"].get("impact", 0.0)
@@ -632,10 +679,9 @@ async def run_simulation_endpoint(req: SimulationRequest, email: str = Depends(g
                     elif event["type"] == "verdict":
                         debate_summary = event["data"].get("debate_summary", "")
                         valuation_results = event["data"].get("valuation", {})
-
+                        
                     yield f"data: {json.dumps(event)}\n\n"
 
-                # Save complete debate run to the SQLite database
                 turns_list = [turns_dict[k] for k in sorted(turns_dict.keys())]
                 from backend.app.services.database import save_debate
                 save_debate(
@@ -645,7 +691,7 @@ async def run_simulation_endpoint(req: SimulationRequest, email: str = Depends(g
                     news_impact=news_impact,
                     company_name=profile.name,
                     company_ticker=profile.ticker,
-                    company_profile=profile.__dict__,
+                    company_profile=profile.dict(),
                     debate_summary=debate_summary,
                     valuation_results=valuation_results,
                     turns=turns_list,
@@ -661,17 +707,6 @@ async def run_simulation_endpoint(req: SimulationRequest, email: str = Depends(g
     except Exception as e:
         logger.exception("Error in run_simulation_endpoint")
         raise HTTPException(status_code=500, detail="Internal server error initiating simulation")
-
-@app.post("/api/upload-pdf")
-async def upload_pdf_endpoint(file: UploadFile = File(...), email: str = Depends(get_current_user)):
-    try:
-        contents = await file.read()
-        from backend.app.services.pdf_parser import extract_pdf_layout_text
-        text = extract_pdf_layout_text(contents)
-        return {"text": text}
-    except Exception as e:
-        logger.exception("Error in upload_pdf_endpoint")
-        raise HTTPException(status_code=500, detail="Internal server error parsing PDF")
 
 @app.get("/api/debates")
 def get_debates_endpoint(email: str = Depends(get_current_user)):
@@ -696,5 +731,6 @@ def get_debate_details_endpoint(debate_id: str, email: str = Depends(get_current
         logger.exception("Error in get_debate_details_endpoint")
         raise HTTPException(status_code=500, detail="Internal server error fetching debate details")
 
+# --- STATIC FILES MOUNT ---
 frontend_dir = os.path.join(project_root, "frontend")
 app.mount("/", StaticFiles(directory=frontend_dir, html=True), name="static")
