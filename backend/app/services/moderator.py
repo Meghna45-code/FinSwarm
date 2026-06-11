@@ -6,8 +6,8 @@ class ModeratorAgent:
     """
     ModeratorAgent (The Truth Guard & Turn Director)
     Responsible for scoring news, deciding which agents speak based on reactivity, 
-    and fact-checking arguments using Room A's Ground Truth Company Profile.
-    Now maintains a dynamic priority queue of speakers based on interest thresholds.
+    provocation, and absolute sentiment, and fact-checking arguments using Room A's 
+    Ground Truth Company Profile.
     """
     def __init__(self, company_profile: CompanyProfile, room_c=None):
         self.company_profile = company_profile
@@ -20,9 +20,7 @@ class ModeratorAgent:
         self.speaker_history: List[str] = []
 
     async def assess_news(self, news_content: str) -> Dict[str, float]:
-        """
-        Runs the standard news assessment.
-        """
+        """Runs the standard news assessment via the LLM Orchestrator."""
         if self.room_c and self.room_c.llm_client:
             try:
                 return await self.room_c.assess_news(news_content)
@@ -34,7 +32,6 @@ class ModeratorAgent:
         impact = 0.3
         summary = news_content[:100] + "..." if len(news_content) > 100 else news_content
 
-        # Simple negative/positive keywords count
         neg_words = ["investigation", "sue", "fraud", "recall", "drop", "loss", "bankrupt", "miss", "subpoena", "deficit"]
         pos_words = ["launch", "growth", "profit", "beat", "partnership", "success", "innovate", "upgrade", "surplus"]
 
@@ -49,7 +46,6 @@ class ModeratorAgent:
             sentiment = 0.5 if pos_count > 2 else 0.2
             impact = min(0.3 + (pos_count * 0.1), 0.8)
 
-        # Boost impact if major legal/governance keywords appear
         if "sec" in content_lower or "fraud" in content_lower or "bankrupt" in content_lower:
             impact = max(impact, 0.8)
 
@@ -65,48 +61,51 @@ class ModeratorAgent:
     def evaluate_and_queue_speakers(self, speaker_name: str, argument_sentiment: float, argument_impact: float, agents_list: List[Any], room_d):
         """
         Broadcasting step:
-        Evaluates the interest of all listening agents. If the effective impact of the
-        argument exceeds their interest threshold, they are added to the priority queue.
+        Evaluates the interest of all listening agents based on Effective Impact, 
+        Provocation (Sentiment Friction), and Frequency Penalties.
         """
-        # Determine the speaker's conviction and credibility to calculate effective impact
+        # 1. Calculate Effective Impact (Argument Impact * Speaker Conviction)
         speaker_conviction = 1.0
-        speaker_credibility = 1.0
         if speaker_name != "SYSTEM_NEWS":
             try:
                 state = room_d.get_agent_state(speaker_name)
-                speaker_conviction = state["conviction"]
-                speaker_credibility = state.get("credibility", 1.0)
+                speaker_conviction = state.get("conviction", 1.0)
             except Exception:
                 pass
 
-        effective_impact = argument_impact * (0.5 + 0.5 * speaker_conviction) * speaker_credibility
+        effective_impact = argument_impact * speaker_conviction
 
-        # Only prevent immediate speaker ping-pong if we have more than 2 agents in the room
+        # Anti-ping-pong skip logic (needs at least 3 agents to function)
         skip_previous = len(agents_list) > 2
 
         for agent in agents_list:
-            # Skip the agent who just spoke to prevent monologue loops
+            # Skip the current speaker to prevent monologue loops
             if agent.persona.name == speaker_name:
                 continue
-            # Skip the previous speaker to prevent immediate back-to-back ping-pong loops
+            # Skip the previous speaker to prevent instant A-B-A-B ping-pong
             if skip_previous and agent.persona.name == self.previous_speaker_name:
                 continue
 
             try:
-                # Fetch dynamic interest threshold (reactivity)
                 state = room_d.get_agent_state(agent.persona.name)
-                reactivity_threshold = state["reactivity_threshold"]
+                listener_reactivity = state.get("reactivity_threshold", agent.reactivity_threshold)
+                listener_sentiment = state.get("sentiment", agent.initial_sentiment)
             except Exception:
-                reactivity_threshold = agent.reactivity_threshold
+                listener_reactivity = agent.reactivity_threshold
+                listener_sentiment = agent.initial_sentiment
 
-            interest_delta = effective_impact - reactivity_threshold
+            # 2. Provocation Bonus (absolute difference between argument sentiment and listener sentiment)
+            provocation_bonus = abs(argument_sentiment - listener_sentiment)
 
-            # Frequency/cooldown penalty: check speaker history and penalize active agents
+            # 3. Base Priority Calculation
+            interest_delta = (effective_impact + provocation_bonus) - listener_reactivity
+
+            # 4. Frequency Penalty: Penalize agents who have spoken recently
             if agent.persona.name in self.speaker_history:
-                # Count position from the end of history
                 history_rev = list(reversed(self.speaker_history))
                 try:
                     pos = history_rev.index(agent.persona.name)
+                    # Pos 0 & 1 are usually caught by Anti-Ping-Pong, but we keep this as a safe fallback
                     if pos == 0:
                         interest_delta -= 0.5
                     elif pos == 1:
@@ -118,8 +117,8 @@ class ModeratorAgent:
                 except ValueError:
                     pass
 
+            # Queue the agent if they break their threshold
             if interest_delta >= 0:
-                # Add to queue or update priority if already present
                 existing = next((item for item in self.speaker_queue if item["agent"].persona.name == agent.persona.name), None)
                 if existing:
                     existing["priority"] = max(existing["priority"], interest_delta)
@@ -127,10 +126,7 @@ class ModeratorAgent:
                     self.speaker_queue.append({"agent": agent, "priority": interest_delta})
 
     def pop_next_speaker(self) -> Optional[Any]:
-        """
-        Pops the agent who is most interested/provoked by the topic.
-        Orders queue by priority descending.
-        """
+        """Pops the agent who is most interested/provoked by the topic."""
         if not self.speaker_queue:
             return None
         
@@ -149,27 +145,35 @@ class ModeratorAgent:
             
         return popped_agent
 
-    def seed_initial_speakers(self, agents_list: List[Any], count: int = 3):
+    def silence_breaker_fallback(self, agents_list: List[Any], room_d, count: int = 3):
         """
         Fallback when queue is empty:
-        Seeds the queue with the most reactive agents (lowest baseline interest thresholds).
+        Seeds the queue with the most PASSIONATE agents by finding the highest Absolute Sentiment.
         """
-        sorted_agents = sorted(agents_list, key=lambda a: a.reactivity_threshold)
+        def get_abs_sentiment(agent):
+            try:
+                state = room_d.get_agent_state(agent.persona.name)
+                return abs(state.get("sentiment", agent.initial_sentiment))
+            except Exception:
+                return abs(agent.initial_sentiment)
+
+        # Sort agents by highest absolute sentiment (closest to -1.0 or 1.0)
+        sorted_agents = sorted(agents_list, key=get_abs_sentiment, reverse=True)
+        
         for i in range(min(count, len(sorted_agents))):
             agent = sorted_agents[i]
-            # Verify if already in queue
             if not any(item["agent"].persona.name == agent.persona.name for item in self.speaker_queue):
                 self.speaker_queue.append({"agent": agent, "priority": 0.1 * (count - i)})
 
-    def select_wrap_up_agents(self, agents_list: List[Any]) -> List[Any]:
+    def select_wrap_up_agents(self, agents_list: List[Any], room_d) -> List[Any]:
         """
         Selects up to 2 unique agents with the highest priority/interest from the queue.
-        If queue is empty, seeds it first using reactive fallback agents.
+        If queue is empty, seeds it first using the absolute sentiment silence breaker.
         """
         if not self.speaker_queue:
-            self.seed_initial_speakers(agents_list, count=3)
+            self.silence_breaker_fallback(agents_list, room_d, count=3)
             
-        # Sort queue by priority descending (which is the calculated interest_delta)
+        # Sort queue by priority descending
         self.speaker_queue.sort(key=lambda x: x["priority"], reverse=True)
         
         selected_agents = []
@@ -184,19 +188,18 @@ class ModeratorAgent:
 
     def should_stop_debate(self, room_d, turn_count: int) -> bool:
         """
-        Evaluates the stopping conditions:
+        Evaluates stopping conditions:
         Consensus: If the sentiments of all agents in the room have converged close
         to each other (standard deviation < 0.15), the debate stops.
         """
         if room_d.agent_states and turn_count >= 2:
-            sentiments = [state.sentiment for state in room_d.agent_states.values()]
+            sentiments = [state["sentiment"] for state in room_d.agent_states.values()]
             if len(sentiments) > 1:
                 mean_sent = sum(sentiments) / len(sentiments)
                 variance = sum((s - mean_sent) ** 2 for s in sentiments) / len(sentiments)
                 std_dev = variance ** 0.5
                 
-                # If standard deviation is less than 0.15, the sentiments are sufficiently
-                # close to each other, indicating convergence.
+                # If standard deviation is less than 0.15, sentiments indicate convergence.
                 if std_dev < 0.15:
                     print(f"--- [Moderator] Stopping debate early at turn {turn_count}: sentiments have converged (std_dev = {std_dev:.3f} < 0.15) ---")
                     return True
@@ -210,7 +213,6 @@ class ModeratorAgent:
         """
         if self.room_c and self.room_c.llm_client:
             try:
-                # Assumes Room C's LLM prompt is updated to also return sentiment and impact
                 return await self.room_c.fact_check_argument(
                     company_profile=self.company_profile,
                     speaker_name=speaker_name,
@@ -223,7 +225,6 @@ class ModeratorAgent:
         sentiment = 0.0
         impact = 0.3
         
-        # Simple keyword scoring for the argument
         pos_words = ["growth", "increase", "up", "bullish", "profit", "buy", "strong"]
         neg_words = ["drop", "decrease", "down", "bearish", "loss", "sell", "risk", "weak"]
         
@@ -236,7 +237,6 @@ class ModeratorAgent:
         elif neg_count > pos_count:
             sentiment = max(-0.2 * (neg_count - pos_count), -1.0)
             
-        # Impact scales with the use of strong keywords
         impact = min(0.3 + ((pos_count + neg_count) * 0.1), 0.9)
 
         return {
@@ -244,6 +244,6 @@ class ModeratorAgent:
             "correction": None, 
             "penalty": 1.0, 
             "cited_source": None,
-            "sentiment": round(sentiment, 2),
-            "impact": round(impact, 2)
+            "argument_sentiment": round(sentiment, 2),
+            "argument_impact": round(impact, 2)
         }
