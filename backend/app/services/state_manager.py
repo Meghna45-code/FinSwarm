@@ -4,40 +4,36 @@ from .personas import AgentPersona
 class AgentState:
     """
     Tracks the active state of a single agent.
-    Includes the 4 dynamic variables: sentiment, conviction, interest (reactivity), and persuasion thresholds.
-    Along with a credibility factor.
+    Includes sentiment, conviction, reactivity threshold, and persuasion logic.
+    Completely dynamic, utilizing the agent's unique social influence susceptibility.
     """
-    def __init__(self, name: str, initial_sentiment: float, initial_conviction: float, initial_reactivity: float, swarm_type: str):
+    def __init__(self, name: str, initial_sentiment: float, initial_conviction: float, initial_reactivity: float, social_influence_susceptibility: float):
         self.name = name
         self.sentiment = initial_sentiment
         self.conviction = initial_conviction
-        # Threshold 1: Interest/Reactivity Threshold (starts at initial baseline)
         self.reactivity_threshold = initial_reactivity
-        self.swarm_type = swarm_type
-        self.credibility = 1.0
+        self.social_influence_susceptibility = social_influence_susceptibility
         
-        # Threshold 2: Persuasion Threshold (initialized dynamically from starting conviction)
-        self.bias_factor = self._determine_bias_factor(swarm_type)
+        # Initialize persuasion threshold dynamically
+        self.persuasion_threshold = 0.5
         self.update_persuasion_threshold()
 
-    def _determine_bias_factor(self, swarm_type: str) -> float:
-        if "Retail" in swarm_type:
-            return 0.4  # High susceptibility, lower persuasion threshold
-        elif "Trading & Analytical" in swarm_type:
-            return 0.7  # Rigid/skeptical, higher persuasion threshold
-        else:
-            return 0.5  # Medium susceptibility
-
     def update_persuasion_threshold(self):
-        """Updates the persuasion threshold based on current conviction and bias."""
-        self.persuasion_threshold = round(max(0.05, min(0.9, self.conviction * self.bias_factor)), 3)
+        """
+        Updates how stubborn the agent is.
+        High Conviction + Low Susceptibility = High Persuasion Threshold (Stubborn)
+        Low Conviction + High Susceptibility = Low Persuasion Threshold (Gullible)
+        """
+        stubbornness = 1.0 - self.social_influence_susceptibility
+        # Threshold scales with conviction and stubbornness
+        self.persuasion_threshold = round(max(0.05, min(0.9, self.conviction * stubbornness)), 3)
 
 
 class StateManager:
     """
     StateManager (Live Agent State Database / Slider Registry)
     Maintains the live sentiment, conviction, interest, and persuasion thresholds.
-    Updates states locally and deterministically using mathematical modeling.
+    Updates states locally and deterministically using proportional mathematical modeling.
     """
     def __init__(self, personas: Dict[str, AgentPersona]):
         self.agent_states: Dict[str, AgentState] = {}
@@ -46,31 +42,32 @@ class StateManager:
     def initialize_states(self, personas: Dict[str, AgentPersona]):
         """Initializes the live sliders using baseline values."""
         for name, persona in personas.items():
+            susceptibility = getattr(persona, 'social_influence_susceptibility', 0.5)
             self.agent_states[name] = AgentState(
                 name=persona.name,
                 initial_sentiment=persona.initial_sentiment,
                 initial_conviction=persona.initial_conviction,
                 initial_reactivity=persona.reactivity_threshold,
-                swarm_type=persona.swarm_type
+                social_influence_susceptibility=susceptibility
             )
 
     def get_agent_state(self, name: str) -> Dict[str, float]:
         """Returns the current dynamic variables for a specific agent."""
         state = self.agent_states.get(name)
         if not state:
-            # Fallback: search by persona.name (e.g. "Brand Loyalist / Fanboy")
+            # Fallback search
             for k, val in self.agent_states.items():
                 if val.name == name:
                     state = val
                     break
         if not state:
             raise ValueError(f"Agent {name} not found in StateManager.")
+            
         return {
             "sentiment": state.sentiment,
             "conviction": state.conviction,
             "reactivity_threshold": state.reactivity_threshold,
-            "persuasion_threshold": state.persuasion_threshold,
-            "credibility": state.credibility
+            "persuasion_threshold": state.persuasion_threshold
         }
 
     def get_average_sentiment(self) -> float:
@@ -81,21 +78,15 @@ class StateManager:
 
     def global_update_state(self, speaker_name: str, argument_sentiment: float, argument_impact: float):
         """
-        Applies local mathematical updates to all 14 agents based on the spoken argument.
-        - Calculates effective impact of the argument.
-        - Checks persuasion threshold to apply changes.
-        - Updates interest thresholds based on consensus and alienation effects.
+        Applies local mathematical updates to all agents based on the spoken argument.
+        Uses proportional shifting based on Impact Ratios rather than binary thresholds.
         """
-        speaker_state = None
-        for key, val in self.agent_states.items():
-            if val.name == speaker_name or key == speaker_name:
-                speaker_state = val
-                break
-                
+        # Find the speaker's state to get their conviction
+        speaker_state = next((val for key, val in self.agent_states.items() if val.name == speaker_name or key == speaker_name), None)
         speaker_conviction = speaker_state.conviction if speaker_state else 0.5
-        speaker_credibility = speaker_state.credibility if speaker_state else 1.0
-        effective_impact = argument_impact * (0.5 + 0.5 * speaker_conviction) * speaker_credibility
-
+        
+        # Effective Impact is the raw argument impact (which includes fact-check penalties) multiplied by speaker confidence.
+        effective_impact = argument_impact * speaker_conviction
         room_avg_sentiment = self.get_average_sentiment()
 
         for key, state in self.agent_states.items():
@@ -103,59 +94,46 @@ class StateManager:
             if state.name == speaker_name or key == speaker_name:
                 continue
 
-            # 2. Persuasion Check:
-            is_conforming = (state.sentiment * argument_sentiment >= 0)
+            # 2. Calculate Proportional Impact Ratio
+            # How hard does this argument hit relative to their stubbornness? (Capped at 3.0x to prevent wild swings)
+            impact_ratio = min(effective_impact / max(state.persuasion_threshold, 0.05), 3.0)
 
-            # Determine susceptibility rates based on swarm type
-            if "Retail" in state.swarm_type:
-                susceptibility = 0.25
-                conviction_gain = 0.15
-                conviction_loss = 0.20
-            elif "Trading & Analytical" in state.swarm_type:
-                susceptibility = 0.10
-                conviction_gain = 0.05
-                conviction_loss = 0.10
-            else:  # Internal / Structural / ESG
-                susceptibility = 0.15
-                conviction_gain = 0.08
-                conviction_loss = 0.12
-
-            # Only shift fully if effective impact exceeds persuasion threshold;
-            # otherwise, apply a background trickle influence (10% susceptibility) to prevent total deadlock.
-            if effective_impact >= state.persuasion_threshold:
-                actual_susceptibility = susceptibility
-                actual_conviction_gain = conviction_gain
-                actual_conviction_loss = conviction_loss
-            else:
-                actual_susceptibility = susceptibility * 0.1
-                actual_conviction_gain = conviction_gain * 0.1
-                actual_conviction_loss = conviction_loss * 0.1
+            # 3. Determine if the listener agrees (conforming) or disagrees (dissenting) with the argument direction
+            # Both positive or both negative = conforming
+            is_conforming = (state.sentiment >= 0 and argument_sentiment >= 0) or (state.sentiment <= 0 and argument_sentiment <= 0)
 
             if is_conforming:
-                # Shift sentiment closer to the argument
+                # AGREEMENT: Validate and strengthen
+                # Shift sentiment closer to the argument proportionally
                 sentiment_diff = argument_sentiment - state.sentiment
-                state.sentiment = round(max(-1.0, min(1.0, state.sentiment + (sentiment_diff * actual_susceptibility))), 3)
-                # Increase conviction
-                state.conviction = round(min(1.0, state.conviction + actual_conviction_gain), 3)
+                shift_amount = sentiment_diff * state.social_influence_susceptibility * impact_ratio * 0.5
+                state.sentiment = round(max(-1.0, min(1.0, state.sentiment + shift_amount)), 3)
+                
+                # Increase conviction proportionally
+                conviction_gain = 0.1 * impact_ratio * state.social_influence_susceptibility
+                state.conviction = round(min(1.0, state.conviction + conviction_gain), 3)
+                
             else:
-                # Decrease conviction
-                state.conviction = round(max(0.0, state.conviction - actual_conviction_loss), 3)
+                # DISAGREEMENT: Shake conviction
+                # Conviction loss scales with effective impact, their susceptibility, and the impact ratio
+                conviction_loss = effective_impact * state.social_influence_susceptibility * impact_ratio * 0.5
+                state.conviction = round(max(0.0, state.conviction - conviction_loss), 3)
                 
-                # If conviction is completely shaken (close to 0), sentiment flips
+                # The Flip: If conviction is completely crushed, they surrender and flip sides
                 if state.conviction <= 0.1:
-                    state.sentiment = round(-state.sentiment * 0.5, 3)  # weak flip
-                    state.conviction = 0.2  # reset to low conviction
+                    state.sentiment = round(-state.sentiment * 0.5, 3)  # Flip sentiment, but weaken it
+                    state.conviction = 0.2  # Reset to low conviction on the new side
                 
-            # Update persuasion threshold dynamically based on the new conviction level
+            # Update their stubbornness based on their new conviction
             state.update_persuasion_threshold()
 
-            # 3. Dynamic Interest (Reactivity) Threshold Update
+            # 4. Dynamic Interest (Reactivity) Threshold Update
             # Consensus Effect vs. Alienation Effect
             alignment_distance = abs(state.sentiment - room_avg_sentiment)
             
-            # If the agent is aligned with the room consensus (low distance), they satisfy and stay quiet (threshold increases)
-            # If they are alienated (high distance), they get defensive and want to fight back (threshold decreases)
             if alignment_distance < 0.5:
+                # Aligned with room consensus: feel safe, get quieter (threshold increases)
                 state.reactivity_threshold = round(min(0.9, state.reactivity_threshold + 0.03), 3)
             else:
+                # Alienated from room consensus: get defensive, want to speak up (threshold decreases)
                 state.reactivity_threshold = round(max(0.02, state.reactivity_threshold - 0.03), 3)

@@ -50,6 +50,8 @@ document.addEventListener('DOMContentLoaded', () => {
   initTutorial();
   initChatInput();
   initVoiceRecognition();
+  adjustFloatingEditControls();
+  window.addEventListener('resize', adjustFloatingEditControls);
 });
 
 // Auth Flow handlers have been moved to auth.js
@@ -138,6 +140,23 @@ async function loadSidebarData() {
     };
   } catch (error) {
     console.error("Error loading sidebar data:", error);
+
+    // 401 = token is expired or invalid (e.g. server restarted).
+    // Clear credentials and redirect user back to the login screen.
+    if (error.status === 401) {
+      console.warn("Session token invalid or expired. Clearing credentials and redirecting to login.");
+      localStorage.removeItem('finswarm_access_token');
+      localStorage.removeItem('finswarm_user');
+      localStorage.removeItem('finswarm_email');
+      localStorage.removeItem('finswarm_role');
+      currentUser = null;
+      document.getElementById('main-screen').classList.remove('active');
+      document.getElementById('auth-screen').classList.add('active');
+      if (typeof showAuthForm === 'function') showAuthForm('signin');
+      return;
+    }
+
+    // Any other error = genuine server connection problem
     const agentsList = document.getElementById('agents-list');
     if (agentsList) {
       agentsList.innerHTML = `
@@ -153,6 +172,7 @@ async function loadSidebarData() {
   }
 }
 
+
 // ==================== 4. CHAT BAR CONTROLS ====================
 function initChatInput() {
   const input = document.getElementById('chat-input');
@@ -167,6 +187,16 @@ function initChatInput() {
 function autoResizeTextarea(textarea) {
   textarea.style.height = 'auto';
   textarea.style.height = textarea.scrollHeight + 'px';
+  adjustFloatingEditControls();
+}
+
+function adjustFloatingEditControls() {
+  const chatBar = document.querySelector('.chat-input-bar');
+  const floatingControls = document.querySelector('.floating-edit-controls');
+  if (chatBar && floatingControls) {
+    const height = chatBar.offsetHeight;
+    floatingControls.style.bottom = (height + 12) + 'px';
+  }
 }
 
 function setInputPrompt(cardElement) {
@@ -380,6 +410,9 @@ function resetToWorkspace() {
   isPlaybackPaused = false;
   currentPlaybackIndex = 0;
   simulationResult = null;
+  // Hide inline debate controls
+  const inlineControls = document.getElementById('debate-inline-controls');
+  if (inlineControls) inlineControls.classList.add('hidden');
   showViewport('viewport-empty');
 }
 
@@ -462,7 +495,11 @@ function startLiveDebateRendering() {
     pauseBtn.innerHTML = '<i class="fa-solid fa-pause"></i> Pause';
     pauseBtn.disabled = false;
   }
-  
+
+  // Show inline debate controls in the chat bar
+  const inlineControls = document.getElementById('debate-inline-controls');
+  if (inlineControls) inlineControls.classList.remove('hidden');
+
   switchSidebarTab('agents');
   initLiveMonitorColumn();
   renderNextPlaybackTurn();
@@ -487,6 +524,9 @@ function renderNextPlaybackTurn() {
     
     const pauseBtn = document.getElementById('btn-pause-debate');
     if (pauseBtn) pauseBtn.disabled = true;
+    // Hide inline controls when debate ends naturally
+    const inlineControls = document.getElementById('debate-inline-controls');
+    if (inlineControls) inlineControls.classList.add('hidden');
     return;
   }
   
@@ -538,7 +578,11 @@ function skipDebateToVerdict() {
     playbackTimeoutId = null;
   }
   isPlaybackPaused = false;
-  
+
+  // Hide inline debate controls immediately
+  const inlineControls = document.getElementById('debate-inline-controls');
+  if (inlineControls) inlineControls.classList.add('hidden');
+
   if (!streamFinished) {
     const container = document.getElementById('debate-timeline-messages');
     let skipLoader = document.getElementById('debate-skip-loader');
@@ -559,6 +603,7 @@ function skipDebateToVerdict() {
     renderFinalVerdict();
   }
 }
+
 
 async function resumeSimulation() {
   if (playbackTimeoutId) {
@@ -740,6 +785,8 @@ async function processSimulationStream(response, isResume = false) {
                   pauseBtn.innerHTML = '<i class="fa-solid fa-pause"></i> Pause';
                   pauseBtn.disabled = false;
                 }
+                const inlineControls = document.getElementById('debate-inline-controls');
+                if (inlineControls) inlineControls.classList.remove('hidden');
               }
             } else if (event.type === 'news_analysis') {
               simulationResult.news_analysis = event.data;
@@ -842,12 +889,12 @@ async function loadCustomTicker() {
   const searchInput = document.getElementById('ticker-search-input');
   const query = searchInput.value.trim();
   if (!query) {
-    alert("Please enter a company ticker or name (e.g. AAPL, Tesla).");
+    alert("Please enter a company ticker or name (e.g. AAPL, Tesla, Google).");
     return;
   }
 
-  // Convert query to a ticker-like string (strip spaces)
-  const ticker = query.toUpperCase().replace(/\s+/g, '');
+  // Send the raw query — the backend LLM resolves both ticker symbols AND company names
+  const ticker = query;
 
   const loadingEl = document.getElementById('company-loading');
   const profileEl = document.getElementById('company-profile-view');
@@ -873,8 +920,8 @@ async function loadCustomTicker() {
       console.warn("LLM alignment failed, keeping current agents:", err);
     }
   } catch (error) {
-    console.error(`Error loading ticker ${ticker}:`, error);
-    alert(`Could not load profile for "${query}". Try a ticker symbol like AAPL, MSFT, or TSLA.`);
+    console.error(`Error loading company "${query}":`, error);
+    alert(`Could not load profile for "${query}". Please check the name or ticker and try again.`);
     profileEl.classList.add('hidden');
     if (emptyState) emptyState.style.display = '';
     renderCompanyProfile(companyData);

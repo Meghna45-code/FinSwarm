@@ -9,6 +9,7 @@ import time
 import secrets
 import jwt
 from typing import Optional, Dict, Any, List
+from dataclasses import asdict
 import re
 
 # Set up logger
@@ -70,7 +71,7 @@ app.add_middleware(
 
 # --- SECURITY UTILITIES & CONFIGURATIONS ---
 SECRET_KEY = os.getenv("JWT_SECRET_KEY", "finswarm-super-secret-key-12345-xyz")
-security = HTTPBearer()
+security = HTTPBearer(auto_error=False)
 
 def hash_password(password: str, salt: str = None) -> tuple:
     """Hashes a password using PBKDF2 with SHA-256."""
@@ -79,7 +80,7 @@ def hash_password(password: str, salt: str = None) -> tuple:
     dk = hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), salt.encode('utf-8'), 100000)
     return dk.hex(), salt
 
-def generate_token(email: str, expires_in_seconds: int = 86400) -> str:
+def generate_token(email: str, expires_in_seconds: int = 604800) -> str:
     """Generates a secure JWT session token."""
     payload = {
         "sub": email,
@@ -95,13 +96,23 @@ def verify_token(token: str) -> Optional[str]:
     except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
         return None
 
-async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)) -> str:
+async def get_current_user(credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)) -> str:
     """Dependency to retrieve the active authorized user email from Authorization headers."""
+    if not credentials:
+        raise HTTPException(status_code=401, detail="Invalid or expired authentication token")
     token = credentials.credentials
     email = verify_token(token)
     if not email:
         raise HTTPException(status_code=401, detail="Invalid or expired authentication token")
     return email
+
+async def get_token_user_or_guest(credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)) -> str:
+    """Returns the authenticated user email, or defaults to guest if token is missing or invalid."""
+    if not credentials:
+        return "guest@finswarm.local"
+    token = credentials.credentials
+    email = verify_token(token)
+    return email or "guest@finswarm.local"
 
 def sanitize_ticker(ticker: str) -> str:
     """Sanitizes ticker inputs to prevent parameter injection."""
@@ -109,6 +120,16 @@ def sanitize_ticker(ticker: str) -> str:
         return ""
     cleaned = re.sub(r'[^A-Za-z0-9.-]', '', ticker)
     return cleaned.upper().strip()[:10]
+
+def sanitize_company_query(query: str) -> str:
+    """Sanitizes a company name or ticker query. Allows letters, numbers, spaces, dots and hyphens.
+    Accepts both ticker symbols (AAPL) and full company names (Google, Goldman Sachs).
+    """
+    if not query:
+        return ""
+    # Allow letters, digits, spaces, dots, hyphens — strip anything else
+    cleaned = re.sub(r'[^A-Za-z0-9 .\-&]', '', query)
+    return cleaned.strip()[:60]
 
 def sanitize_news_content(content: str) -> str:
     """Sanitizes news content inputs to prevent prompt injection."""
@@ -238,6 +259,27 @@ async def upload_file_endpoint(file: UploadFile = File(...), email: str = Depend
     except Exception as e:
         logger.exception("Error in upload_file_endpoint")
         raise HTTPException(status_code=500, detail=f"Internal server error parsing file: {str(e)}")
+
+@app.post("/api/upload-pdf")
+async def upload_pdf_endpoint(file: UploadFile = File(...), email: str = Depends(get_current_user)):
+    """Alias for /api/upload-file, specifically for PDF uploads from the frontend."""
+    try:
+        contents = await file.read()
+        filename = file.filename.lower()
+        if filename.endswith(".pdf"):
+            from backend.app.services.file_parser import extract_pdf_text
+            text = extract_pdf_text(contents)
+        elif filename.endswith((".txt", ".csv")):
+            text = contents.decode("utf-8", errors="ignore")
+        else:
+            raise HTTPException(status_code=400, detail="Unsupported file format for PDF upload endpoint")
+        return {"text": text}
+    except ModuleNotFoundError as e:
+        logger.warning(f"Parsing module not yet implemented: {e}")
+        raise HTTPException(status_code=501, detail="PDF parser not yet implemented.")
+    except Exception as e:
+        logger.exception("Error in upload_pdf_endpoint")
+        raise HTTPException(status_code=500, detail=f"Internal server error parsing PDF: {str(e)}")
 
 @app.post("/api/parse-url")
 async def parse_url_endpoint(req: UrlRequest, email: str = Depends(get_current_user)):
@@ -402,55 +444,46 @@ def update_profile_endpoint(req: UpdateProfileRequest, email: str = Depends(get_
 
 # --- SYSTEM & SIMULATION ENDPOINTS ---
 
+
 @app.get("/api/personas")
-def get_personas(email: str = Depends(get_current_user)):
+def get_personas():
+    """Returns the baseline agent personas. No authentication required — these are static templates."""
     try:
         personas = initialize_personas()
-        return {name: p.dict() for name, p in personas.items()}
+        return {name: asdict(p) for name, p in personas.items()}
     except Exception as e:
         logger.exception("Error in /api/personas")
         raise HTTPException(status_code=500, detail="Internal server error")
 
+
 def get_default_company_profile() -> CompanyProfile:
-    return CompanyProfile(
-        ticker="TSLA",
-        name="Tesla Inc",
-        sector="Consumer Cyclical",
-        industry="Auto Manufacturers",
-        description="Electric vehicle and clean energy company.",
-        key_metrics={"Revenue": " $96B", "Free Cash Flow": "$ 4.3B", "Stock Price": "$175.00"},
-        historical_news=[
-            {"date": "2026-01-15", "title": "Earnings Beat", "summary": "Tesla exceeded Q4 earnings expectations."}
-        ],
-        recent_events=["Model Y Refresh launched in North America."],
-        one_sentence_facts=[
-            "Tesla is named after Nikola Tesla, the famous electrical engineer and inventor.",
-            "Tesla open-sourced all of its patents in 2014 to accelerate the world's transition to sustainable energy.",
-            "The Tesla Model S features a medical-grade HEPA filter named 'Bioweapon Defense Mode'.",
-            "Tesla's first car was the Roadster, which was launched in 2008 and based on a Lotus Elise chassis.",
-            "In 2018, Elon Musk launched his midnight cherry Tesla Roadster into space on a Falcon Heavy rocket."
-        ]
-    )
+    from backend.app.services.mock_fallbacks import generate_offline_company_profile
+    return generate_offline_company_profile("Tesla")
+
 
 @app.get("/api/company")
-async def get_company(ticker: Optional[str] = None, email: str = Depends(get_current_user), x_gemini_api_key: Optional[str] = Header(None)):
+async def get_company(ticker: Optional[str] = None, x_gemini_api_key: Optional[str] = Header(None)):
     try:
         if not ticker or ticker.upper().strip() == "TSLA":
             return get_default_company_profile()
         
-        ticker_cleaned = sanitize_ticker(ticker)
+        # Use broad sanitizer that accepts company names like "Google" or "Goldman Sachs"
+        query_cleaned = sanitize_company_query(ticker)
+        if not query_cleaned:
+            return get_default_company_profile()
+
         api_key = x_gemini_api_key or os.getenv("GEMINI_API_KEY")
         llm_client = GeminiLlmClient(api_key=api_key) if api_key else None
         room_c = LlmOrchestrator(llm_client=llm_client)
         
-        profile = await room_c.generate_profile_for_ticker(ticker_cleaned)
+        profile = await room_c.generate_profile_for_ticker(query_cleaned)
         return profile
     except Exception as e:
         logger.exception("Error in /api/company")
         raise HTTPException(status_code=500, detail="Internal server error fetching company profile")
 
 @app.post("/api/agents/autofill")
-async def autofill_agent_endpoint(req: Dict[str, Any], email: str = Depends(get_current_user), x_gemini_api_key: Optional[str] = Header(None)):
+async def autofill_agent_endpoint(req: Dict[str, Any], email: str = Depends(get_token_user_or_guest), x_gemini_api_key: Optional[str] = Header(None)):
     try:
         api_key = x_gemini_api_key or os.getenv("GEMINI_API_KEY")
         llm_client = GeminiLlmClient(api_key=api_key) if api_key else None
@@ -484,7 +517,7 @@ async def autofill_agent_endpoint(req: Dict[str, Any], email: str = Depends(get_
         raise HTTPException(status_code=500, detail="Internal server error during persona autofill")
 
 @app.post("/api/personas/contextualize")
-async def contextualize_personas_endpoint(req: ContextualizeRequest, email: str = Depends(get_current_user), x_gemini_api_key: Optional[str] = Header(None)):
+async def contextualize_personas_endpoint(req: ContextualizeRequest, email: str = Depends(get_token_user_or_guest), x_gemini_api_key: Optional[str] = Header(None)):
     try:
         api_key = x_gemini_api_key or os.getenv("GEMINI_API_KEY")
         llm_client = GeminiLlmClient(api_key=api_key) if api_key else None
@@ -519,7 +552,7 @@ async def contextualize_personas_endpoint(req: ContextualizeRequest, email: str 
         raise HTTPException(status_code=500, detail="Internal server error during contextualization")
 
 @app.post("/api/agents/command")
-async def process_swarm_command_endpoint(req: CommandRequest, email: str = Depends(get_current_user), x_gemini_api_key: Optional[str] = Header(None)):
+async def process_swarm_command_endpoint(req: CommandRequest, email: str = Depends(get_token_user_or_guest), x_gemini_api_key: Optional[str] = Header(None)):
     try:
         req.command = sanitize_news_content(req.command)
         api_key = x_gemini_api_key or os.getenv("GEMINI_API_KEY")
@@ -562,7 +595,7 @@ def safe_float(val, default: float = 0.0) -> float:
         return default
 
 @app.post("/api/simulate")
-async def run_simulation_endpoint(req: SimulationRequest, email: str = Depends(get_current_user), x_gemini_api_key: Optional[str] = Header(None)):
+async def run_simulation_endpoint(req: SimulationRequest, email: str = Depends(get_token_user_or_guest), x_gemini_api_key: Optional[str] = Header(None)):
     req.news_content = sanitize_news_content(req.news_content)
     print(f"--- [API DEBUG] Received simulate request by {email} for: {req.news_content[:50]}... ---")
     try:
@@ -641,7 +674,7 @@ async def run_simulation_endpoint(req: SimulationRequest, email: str = Depends(g
                         "cited_source": turn.get("cited_source")
                     }
             try:
-                yield f"data: {json.dumps({'type': 'company_profile', 'data': profile.dict()})}\n\n"
+                yield f"data: {json.dumps({'type': 'company_profile', 'data': asdict(profile)})}\n\n"
                 
                 async for event in room_b.run_simulation_generator(
                     req.news_content,
@@ -691,7 +724,7 @@ async def run_simulation_endpoint(req: SimulationRequest, email: str = Depends(g
                     news_impact=news_impact,
                     company_name=profile.name,
                     company_ticker=profile.ticker,
-                    company_profile=profile.dict(),
+                    company_profile=asdict(profile),
                     debate_summary=debate_summary,
                     valuation_results=valuation_results,
                     turns=turns_list,
@@ -709,7 +742,7 @@ async def run_simulation_endpoint(req: SimulationRequest, email: str = Depends(g
         raise HTTPException(status_code=500, detail="Internal server error initiating simulation")
 
 @app.get("/api/debates")
-def get_debates_endpoint(email: str = Depends(get_current_user)):
+def get_debates_endpoint(email: str = Depends(get_token_user_or_guest)):
     try:
         from backend.app.services.database import get_all_debates
         return get_all_debates(email)
@@ -718,7 +751,7 @@ def get_debates_endpoint(email: str = Depends(get_current_user)):
         raise HTTPException(status_code=500, detail="Internal server error fetching debates")
 
 @app.get("/api/debates/{debate_id}")
-def get_debate_details_endpoint(debate_id: str, email: str = Depends(get_current_user)):
+def get_debate_details_endpoint(debate_id: str, email: str = Depends(get_token_user_or_guest)):
     try:
         from backend.app.services.database import get_debate_details
         details = get_debate_details(debate_id, email)

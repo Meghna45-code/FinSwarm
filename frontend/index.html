@@ -587,7 +587,15 @@
       </div>
     </div>
 
-      
+    <!-- ==================== SIDEBAR ==================== -->
+    <aside class="sidebar">
+
+      <!-- Sidebar Header / Logo -->
+      <div class="sidebar-header">
+        <i class="fa-solid fa-hive sidebar-logo-icon"></i>
+        <span class="logo-text">FinSwarm</span>
+      </div>
+
       <!-- Tab Navigation inside Sidebar -->
       <div class="sidebar-tabs">
         <button id="tab-company-btn" class="tab-btn active" onclick="switchSidebarTab('company')">
@@ -818,42 +826,17 @@
         
         <!-- 4. LIVE DEBATE TIMELINE VIEW -->
         <div id="viewport-live-debate" class="viewport-section">
-          <div class="debate-timeline-header">
-            <div class="debate-news-card" style="display: flex; justify-content: space-between; align-items: center; gap: 20px;">
-              <div style="flex: 1;">
-                <span class="label">Simulating News</span>
-                <p id="debate-running-news">...</p>
-                <div class="debate-news-scores">
-                  <span class="badge score-impact"><i class="fa-solid fa-bolt"></i> Impact: <span id="debate-news-impact">0%</span></span>
-                  <span class="badge score-sentiment"><i class="fa-solid fa-scale-balanced"></i> Sentiment: <span id="debate-news-sentiment">0.0</span></span>
-                </div>
-              </div>
-              <div class="debate-controls" style="display: flex; gap: 8px; flex-shrink: 0;">
-                <button id="btn-voice-toggle" class="btn btn-outline btn-sm" onclick="toggleVoiceSpeech()">
-                  <i class="fa-solid fa-volume-xmark"></i> Voice Speak
-                </button>
-                <button id="btn-pause-debate" class="btn btn-outline btn-sm" onclick="toggleDebatePause()">
-                  <i class="fa-solid fa-pause"></i> Pause
-                </button>
-                <button id="btn-skip-debate" class="btn btn-primary btn-sm" onclick="skipDebateToVerdict()">
-                  <i class="fa-solid fa-angles-right"></i> Skip to Verdict
-                </button>
-              </div>
-            </div>
+
+          <!-- Floating news info badge — top-left corner, no layout impact -->
+          <div id="debate-news-badge" class="debate-news-badge">
+            <span class="badge score-impact"><i class="fa-solid fa-bolt"></i> Impact: <span id="debate-news-impact">0%</span></span>
+            <span class="badge score-sentiment"><i class="fa-solid fa-scale-balanced"></i> Sentiment: <span id="debate-news-sentiment">0.0</span></span>
           </div>
-          
+
           <div class="debate-workspace-split">
-            <!-- Live Timeline of Messages (60%) -->
+            <!-- Live Timeline of Messages -->
             <div id="debate-timeline-messages" class="debate-timeline-messages">
               <!-- Messages populated dynamically -->
-            </div>
-            
-            <!-- Live Swarm Monitor (40%) -->
-            <div id="debate-agent-monitor" class="debate-monitor-column">
-              <h3>Live Swarm State Monitoring</h3>
-              <div id="live-agent-monitor-grid" class="live-agent-monitor-grid">
-                <!-- 14 dynamic agent cards updating live -->
-              </div>
             </div>
           </div>
         </div>
@@ -931,7 +914,7 @@
           <i class="fa-solid fa-users-gear"></i> Edit Swarm Agents
         </button>
       </div>
-      
+
       <!-- Hidden file input uploader -->
       <input type="file" id="file-uploader" style="display: none;" accept=".txt,.csv,.json,.pdf" onchange="handleFileSelection(event)" />
       
@@ -940,6 +923,8 @@
 
       <!-- Bottom Chat/Input Bar -->
       <footer class="chat-input-bar">
+
+
         
         <!-- Left attachment menu -->
         <div class="chat-left-actions">
@@ -960,9 +945,19 @@
           <textarea id="chat-input" placeholder="Analyze a new news source or type financial context..." rows="1" oninput="autoResizeTextarea(this)"></textarea>
         </div>
         
-        <!-- Right actions: voice, mode, submit -->
+        <!-- Right actions: debate controls, mode, submit -->
         <div class="chat-right-actions">
-          
+
+          <!-- Debate Controls (visible only during live debate) -->
+          <div id="debate-inline-controls" class="debate-inline-controls hidden">
+            <button id="btn-pause-debate" class="btn btn-outline btn-sm" onclick="toggleDebatePause()">
+              <i class="fa-solid fa-pause"></i> Pause
+            </button>
+            <button id="btn-skip-debate" class="btn btn-primary btn-sm" onclick="skipDebateToVerdict()">
+              <i class="fa-solid fa-angles-right"></i> Skip to Verdict
+            </button>
+          </div>
+
           <!-- Selected Mode Summary Bubble -->
           <div id="mode-bubble" class="mode-bubble-indicator" onclick="toggleModeDropdown()">
             <i class="fa-solid fa-comments"></i> <span>Live Debate</span>

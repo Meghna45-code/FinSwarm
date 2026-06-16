@@ -44,7 +44,11 @@ async function apiGetPersonas() {
   const res = await fetch(`${API_BASE}/api/personas`, {
     headers: { ...getApiKeyHeader() }
   });
-  if (!res.ok) throw new Error("Failed to load agent personas");
+  if (!res.ok) {
+    const err = new Error("Failed to load agent personas");
+    err.status = res.status;
+    throw err;
+  }
   return await res.json();
 }
 

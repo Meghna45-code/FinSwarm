@@ -2,33 +2,45 @@
 :root {
   --font-title: 'Outfit', 'Inter', sans-serif;
   --font-body: 'Inter', sans-serif;
-  
-  /* Color Palette - Glowing Dark Space */
-  --bg-primary: #080c16;
-  --bg-secondary: #0e1626;
-  --bg-panel: rgba(16, 25, 46, 0.65);
-  --border-color: rgba(255, 255, 255, 0.08);
-  
-  --text-main: #f1f5f9;
-  --text-muted: #94a3b8;
-  --text-dark: #64748b;
-  
-  --color-primary: #a855f7; /* Purple */
-  --color-secondary: #06b6d4; /* Teal */
-  --color-blue: #3b82f6;
-  --color-green: #10b981;
-  --color-red: #ef4444;
-  --color-yellow: #f59e0b;
-  
-  --shadow-glow: 0 0 20px rgba(168, 85, 247, 0.25);
-  --shadow-teal-glow: 0 0 20px rgba(6, 182, 212, 0.25);
-  --shadow-panel: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-  
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 20px;
-  --radius-xl: 30px;
-  
+
+  /* ---- Cotton Candy Color Palette ---- */
+  /* Backgrounds — soft pastel gradient layering */
+  --bg-primary:    #F0F9F8;   /* Candy Floss — pale mint-white */
+  --bg-secondary:  #FFD3DD;   /* Cotton Candy — soft blush pink */
+  --bg-tertiary:   #F3A2BE;   /* Bubble Gum — deeper pink */
+  --bg-panel:      rgba(255, 252, 255, 0.72); /* frosted glass white-pink */
+
+  /* Borders */
+  --border-color:  rgba(129, 191, 183, 0.3);
+
+  /* Text */
+  --text-main:  #3A345B;   /* Jacarta — main text */
+  --text-muted: #9A7EA3;   /* Old Lavender light — muted text */
+  --text-dark:  #BFA8C7;   /* Old Lavender lighter — subtle text */
+
+  /* ---- Brand Accent Colors ---- */
+  --color-primary:   #81BFB7;  /* Wintergreen teal */
+  --color-secondary: #C6E6E3;  /* Mint — soft teal */
+  --color-pink:      #F3A2BE;  /* Bubble Gum pink */
+  --color-lavender:  #81BFB7;  /* Wintergreen (replaces lavender) */
+  --color-blue:      #C6E6E3;  /* Mint (replaces sky blue) */
+  --color-green:     #81BFB7;  /* Wintergreen */
+  --color-red:       #f9b8c8;  /* soft rose-pink (error states) */
+  --color-yellow:    #fde68a;  /* pastel butter yellow */
+  --color-peach:     #FFD3DD;  /* Cotton Candy peach */
+
+  /* ---- Shadows ---- */
+  --shadow-glow:       0 0 22px rgba(129, 191, 183, 0.3);
+  --shadow-pink-glow:  0 0 22px rgba(243, 162, 190, 0.35);
+  --shadow-teal-glow:  0 0 22px rgba(198, 230, 227, 0.4);
+  --shadow-panel:      0 8px 32px rgba(129, 191, 183, 0.14);
+
+  /* ---- Radii ---- */
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 22px;
+  --radius-xl: 32px;
+
   --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -41,7 +53,7 @@
 
 body {
   font-family: var(--font-body);
-  background-color: var(--bg-primary);
+  background: linear-gradient(135deg, #FFD3DD 0%, #FFD3DD 65%, #C6E6E3 100%);
   color: var(--text-main);
   height: 100vh;
   overflow: hidden;
@@ -53,6 +65,7 @@ h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-title);
   font-weight: 600;
   letter-spacing: -0.02em;
+  color: var(--text-main);
 }
 
 /* Scrollbar Styling */
@@ -64,11 +77,11 @@ h1, h2, h3, h4, h5, h6 {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(129, 191, 183, 0.35);
   border-radius: var(--radius-sm);
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(129, 191, 183, 0.6);
 }
 
 /* ==================== KEYFRAMES ANIMATIONS ==================== */
@@ -108,17 +121,17 @@ h1, h2, h3, h4, h5, h6 {
   0% {
     transform: scale(1);
     opacity: 1;
-    box-shadow: 0 0 20px rgba(6, 182, 212, 0.3);
+    box-shadow: 0 0 20px rgba(198, 230, 227, 0.4);
   }
   50% {
     transform: scale(1.08);
     opacity: 0.7;
-    box-shadow: 0 0 40px rgba(6, 182, 212, 0.6);
+    box-shadow: 0 0 40px rgba(129, 191, 183, 0.6);
   }
   100% {
     transform: scale(1);
     opacity: 1;
-    box-shadow: 0 0 20px rgba(6, 182, 212, 0.3);
+    box-shadow: 0 0 20px rgba(198, 230, 227, 0.4);
   }
 }
 

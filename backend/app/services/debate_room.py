@@ -32,7 +32,8 @@ class DebateAgentInstance:
     ) -> Dict[str, Any]:
         """
         Executes the agent's turn. 
-        Fetches stats from StateManager, calls LlmOrchestrator to prompt the LLM, and returns the response.
+        Fetches stats from StateManager and calls LlmOrchestrator to prompt the LLM.
+        Throws a hard error if the LLM connection fails.
         """
         # Fetch dynamic state from StateManager (the single source of truth)
         state = self.room_d.get_agent_state(self.persona.name)
@@ -50,67 +51,33 @@ class DebateAgentInstance:
             current_reactivity=current_reactivity
         )
 
-        if self.room_c and self.room_c.llm_client:
-            try:
-                response = await self.room_c.generate_agent_argument(
-                    system_prompt=active_system_prompt,
-                    news_content=news_content,
-                    news_sentiment=news_sentiment,
-                    news_impact=news_impact,
-                    agent_sentiment=current_sentiment,
-                    agent_conviction=current_conviction,
-                    reactivity_threshold=current_reactivity,
-                    debate_history=debate_history,
-                    is_wrap_up=is_wrap_up,
-                    cached_content=cached_content
-                )
-                
-                return {
-                    "speaker": self.persona.name,
-                    "internal_monologue": response.get("internal_monologue", ""),
-                    "spoken_argument": response.get("spoken_argument", "..."),
-                    "updated_sentiment": float(response.get("updated_sentiment", current_sentiment)),
-                    "updated_conviction": float(response.get("updated_conviction", current_conviction))
-                }
-            except Exception as e:
-                print(f"Error generating speech for {self.persona.name}: {e}")
-                pass  # Fallback to local mock generation
-                
-        return self._generate_fallback_response(news_content, news_sentiment, current_sentiment, current_conviction, is_wrap_up=is_wrap_up)
+        if not self.room_c or not self.room_c.llm_client:
+            raise ConnectionError("CRITICAL: LLM Client is completely disconnected. Cannot generate speech.")
 
-    def _generate_fallback_response(self, news_content: str, news_sentiment: float, current_sentiment: float, current_conviction: float, is_wrap_up: bool = False) -> Dict[str, Any]:
-        """Local mock response for verification when LLM is offline."""
-        if is_wrap_up:
-            spoken = f"In conclusion, as a {self.persona.name}, my final stance is clear. "
-            if current_sentiment > 0.3:
-                spoken += "Despite the arguments, I still believe the underlying valuation is solid and we will see long-term gains."
-            elif current_sentiment < -0.3:
-                spoken += "The debate has not addressed the fundamental downside risks, and I maintain my cautious outlook."
-            else:
-                spoken += "We must watch key metrics closely, but we remain neutral until the next earnings report."
+        try:
+            response = await self.room_c.generate_agent_argument(
+                system_prompt=active_system_prompt,
+                news_content=news_content,
+                news_sentiment=news_sentiment,
+                news_impact=news_impact,
+                agent_sentiment=current_sentiment,
+                agent_conviction=current_conviction,
+                reactivity_threshold=current_reactivity,
+                debate_history=debate_history,
+                is_wrap_up=is_wrap_up,
+                cached_content=cached_content
+            )
+            
             return {
                 "speaker": self.persona.name,
-                "internal_monologue": "Offline mock wrap-up reaction.",
-                "spoken_argument": spoken,
-                "updated_sentiment": current_sentiment,
-                "updated_conviction": current_conviction
+                "internal_monologue": response.get("internal_monologue", ""),
+                "spoken_argument": response.get("spoken_argument", "..."),
+                "updated_sentiment": float(response.get("updated_sentiment", current_sentiment)),
+                "updated_conviction": float(response.get("updated_conviction", current_conviction))
             }
-
-        spoken = f"Looking at this news, as a {self.persona.name}, my view is that we need to monitor the situation. "
-        if current_sentiment > 0.3:
-            spoken += "I remain optimistic about the long-term potential of the brand."
-        elif current_sentiment < -0.3:
-            spoken += "This highlights the structural risks that have been ignored."
-        else:
-            spoken += "We need more data before jumping to conclusions."
-
-        return {
-            "speaker": self.persona.name,
-            "internal_monologue": f"Offline mock reaction.",
-            "spoken_argument": spoken,
-            "updated_sentiment": current_sentiment,
-            "updated_conviction": current_conviction
-        }
+        except Exception as e:
+            # STOP SILENCING THE ERROR. Raise it so the frontend knows the simulation broke.
+            raise RuntimeError(f"Simulation Halted: Failed to generate speech for {self.persona.name}. Reason: {str(e)}")
 
 
 class DebateRoom:
@@ -248,7 +215,6 @@ class DebateRoom:
                         state_obj.sentiment = saved_state.get("sentiment", state_obj.sentiment)
                         state_obj.conviction = saved_state.get("conviction", state_obj.conviction)
                         state_obj.reactivity_threshold = saved_state.get("reactivity_threshold", state_obj.reactivity_threshold)
-                        state_obj.credibility = saved_state.get("credibility", state_obj.credibility)
                         state_obj.update_persuasion_threshold()
 
             # Find last speaker and restore queue based on last argument
@@ -312,18 +278,14 @@ class DebateRoom:
             evaluated_sentiment = check_res.get("argument_sentiment", turn_result["updated_sentiment"])
             veracity_score = check_res.get("penalty", 1.0)
             
-            # Apply credibility penalty if they hallucinated
-            cur_state_obj = self.room_d.agent_states.get(speaker_name)
-            if not check_res.get("is_valid", True) and cur_state_obj:
-                cur_state_obj.credibility = round(max(0.1, cur_state_obj.credibility * veracity_score), 2)
-
             # D. Update the State Manager
+            cur_state_obj = self.room_d.agent_states.get(speaker_name)
             if cur_state_obj:
                 cur_state_obj.sentiment = turn_result["updated_sentiment"]
                 cur_state_obj.conviction = turn_result["updated_conviction"]
                 cur_state_obj.update_persuasion_threshold()
 
-            # Global impact (optional tracking of how the argument hit the room)
+            # Global impact application (State Manager handles shifting everyone's mood)
             scaled_impact = evaluated_impact * veracity_score
             self.room_d.global_update_state(
                 speaker_name=speaker_name,

@@ -6,17 +6,22 @@ let isVoiceActive = false; // Track TTS active state
 function toggleVoiceSpeech() {
   isVoiceActive = !isVoiceActive;
   const toggleBtn = document.getElementById('btn-voice-toggle');
-  if (isVoiceActive) {
-    toggleBtn.innerHTML = '<i class="fa-solid fa-volume-high text-glowing"></i> Voice On';
-    toggleBtn.classList.add('btn-primary');
-    toggleBtn.classList.remove('btn-outline');
-  } else {
-    toggleBtn.innerHTML = '<i class="fa-solid fa-volume-xmark"></i> Voice Speak';
-    toggleBtn.classList.remove('btn-primary');
-    toggleBtn.classList.add('btn-outline');
+  if (toggleBtn) {
+    if (isVoiceActive) {
+      toggleBtn.innerHTML = '<i class="fa-solid fa-volume-high text-glowing"></i> Voice On';
+      toggleBtn.classList.add('btn-primary');
+      toggleBtn.classList.remove('btn-outline');
+    } else {
+      toggleBtn.innerHTML = '<i class="fa-solid fa-volume-xmark"></i> Voice Speak';
+      toggleBtn.classList.remove('btn-primary');
+      toggleBtn.classList.add('btn-outline');
+    }
+  }
+  if (!isVoiceActive) {
     window.speechSynthesis.cancel(); // Cancel any speaking instantly
   }
 }
+
 
 /**
  * Speak a turn using HTML5 SpeechSynthesis.

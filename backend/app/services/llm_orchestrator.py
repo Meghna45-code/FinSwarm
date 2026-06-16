@@ -334,17 +334,21 @@ Generate the Company Profile schema."""
             print(f"Online profile generation failed ({e}). Falling back to static mock.")
             return self._generate_offline_company_profile(news_content)
 
-    async def generate_profile_for_ticker(self, ticker: str) -> CompanyProfile:
-        """Generates a CompanyProfile dynamically for a specific ticker."""
-        ticker = ticker.upper().strip()
+    async def generate_profile_for_ticker(self, query: str) -> CompanyProfile:
+        """Generates a CompanyProfile dynamically for a specific ticker symbol or company name.
+        Accepts both stock tickers (e.g. AAPL, GOOG) and full company names (e.g. Google, Apple Inc).
+        """
+        query = query.strip()
         if not self.llm_client:
-            profile = self._generate_offline_company_profile(f"Profile for {ticker}")
-            profile.ticker = ticker
-            profile.name = f"{ticker} Inc"
+            profile = self._generate_offline_company_profile(f"Profile for {query}")
+            profile.ticker = query.upper().replace(" ", "")[:6]
+            profile.name = query
             return profile
 
-        system_prompt = f"""You are a financial company profile generator. Your job is to generate a complete, realistic Company Profile schema for the requested company ticker."""
-        prompt = f"Generate the Company Profile schema for ticker '{ticker}'."
+        system_prompt = """You are a financial company profile generator. Your job is to generate a complete, realistic Company Profile schema for the requested company.
+The input may be a stock ticker symbol (e.g. AAPL, GOOG, MSFT) OR a company name (e.g. Google, Apple, Goldman Sachs).
+In either case, identify the correct publicly traded company and return its full profile."""
+        prompt = f"Generate the Company Profile schema for: '{query}'"
         try:
             result = await self.llm_client.generate_json(
                 system_prompt=system_prompt,
@@ -352,8 +356,8 @@ Generate the Company Profile schema."""
                 response_schema=CompanyProfileSchema
             )
             return CompanyProfile(
-                ticker=result.get("ticker", ticker),
-                name=result.get("name", f"{ticker} Inc"),
+                ticker=result.get("ticker", query),
+                name=result.get("name", f"{query} Inc"),
                 sector=result.get("sector", "Technology"),
                 industry=result.get("industry", "Consumer Electronics"),
                 description=result.get("description", ""),
@@ -366,9 +370,9 @@ Generate the Company Profile schema."""
             )
         except Exception as e:
             print(f"Online ticker profile generation failed ({e}). Falling back to static mock.")
-            profile = self._generate_offline_company_profile(f"Profile for {ticker}")
-            profile.ticker = ticker
-            profile.name = f"{ticker} Inc"
+            profile = self._generate_offline_company_profile(f"Profile for {query}")
+            profile.ticker = query
+            profile.name = f"{query} Inc"
             return profile
 
     async def autofill_agent_persona(

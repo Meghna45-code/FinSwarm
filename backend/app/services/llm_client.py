@@ -5,7 +5,6 @@ from typing import Dict, Any, Optional
 
 logger = logging.getLogger("finswarm.llm_client")
 
-
 class GeminiLlmClient:
     """
     GeminiLlmClient
@@ -20,15 +19,16 @@ class GeminiLlmClient:
         self.cache_created_at = None
         
         if not self.api_key:
-            logger.warning("GEMINI_API_KEY environment variable is not set. Real LLM calls will fail or fallback.")
-        else:
-            try:
-                import google.generativeai as genai
-                genai.configure(api_key=self.api_key)
-                self.client_configured = True
-                logger.info("Gemini LLM Client configured successfully.")
-            except ImportError:
-                logger.error("google-generativeai library is not installed. Please run 'pip install google-generativeai'.")
+            # FATAL ERROR: Stop the app right here instead of faking the connection.
+            raise ValueError("CRITICAL: GEMINI_API_KEY environment variable is missing. The simulation cannot run.")
+            
+        try:
+            import google.generativeai as genai
+            genai.configure(api_key=self.api_key)
+            self.client_configured = True
+            logger.info("Gemini LLM Client configured successfully.")
+        except ImportError:
+            raise ImportError("CRITICAL: google-generativeai library is not installed. Run 'pip install google-generativeai'.")
 
     def create_context_cache(self, company_profile_str: str, agents_list_str: str) -> Optional[str]:
         """
@@ -67,7 +67,6 @@ class GeminiLlmClient:
             
             logger.info("Creating new context cache on Gemini server...")
             # Create CachedContent on Gemini
-            # Caching is supported on gemini-1.5-flash-001 or gemini-1.5-flash
             cache = caching.CachedContent.create(
                 model='models/gemini-1.5-flash-001',
                 display_name='finswarm_debate_context_cache',
@@ -81,8 +80,9 @@ class GeminiLlmClient:
             return cache.name
             
         except Exception as e:
+            # Note: Caching is a performance optimization. If caching fails (e.g., API limits), 
+            # we gracefully fall back to stateless mode rather than breaking the simulation entirely.
             logger.warning(f"Failed to create Gemini context cache ({e}). Gracefully falling back to stateless prompt mode.")
-            # Clear invalid cache reference
             self.cache_object = None
             self.cache_created_at = None
             return None
@@ -97,6 +97,7 @@ class GeminiLlmClient:
         """
         Calls Gemini API asynchronously and enforces a JSON response format.
         Supports using a server-side context cache.
+        Throws clear exceptions on failure instead of suppressing them.
         """
         if not self.client_configured:
             raise ValueError("Gemini API client is not configured. Set GEMINI_API_KEY environment variable.")
@@ -112,7 +113,6 @@ class GeminiLlmClient:
         # If cache is provided and active, instantiate model from cache
         if cached_content:
             try:
-                # When using cached content, legacy SDK loads model via from_cached_content
                 cache_ref = self.cache_object if self.cache_object and self.cache_object.name == cached_content else cached_content
                 model = genai.GenerativeModel.from_cached_content(
                     cached_content=cache_ref,
@@ -126,7 +126,6 @@ class GeminiLlmClient:
                     generation_config=generation_config
                 )
         else:
-            # Using gemini-1.5-flash as the highly performant, standard default
             model_name = "gemini-1.5-flash"
             model = genai.GenerativeModel(
                 model_name=model_name,
@@ -134,7 +133,7 @@ class GeminiLlmClient:
                 generation_config=generation_config
             )
 
-        # Call Gemini asynchronously
+        # Call Gemini asynchronously. Will raise exception if the API is down or rate-limited.
         response = await model.generate_content_async(prompt)
         response_text = response.text.strip()
 
@@ -151,4 +150,5 @@ class GeminiLlmClient:
             try:
                 return json.loads(cleaned_text.strip())
             except json.JSONDecodeError:
-                raise ValueError(f"Failed to decode response from Gemini as JSON: {response_text}")
+                # Fatal error: AI output cannot be read by the system.
+                raise ValueError(f"CRITICAL: Failed to decode response from Gemini as JSON: {response_text}")
