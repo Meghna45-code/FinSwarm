@@ -1,12 +1,22 @@
 {
-  "experimentalServices": {
-    "frontend": {
-      "entrypoint": "frontend/index.html",
-      "routePrefix": "/"
+  "builds": [
+    {
+      "src": "backend/app/main.py",
+      "use": "@vercel/python"
     },
-    "backend": {
-      "entrypoint": "backend/app/main.py",
-      "routePrefix": "/backend"
+    {
+      "src": "frontend/**",
+      "use": "@vercel/static"
     }
-  }
+  ],
+  "rewrites": [
+    {
+      "source": "/backend/(.*)",
+      "destination": "/backend/app/main.py"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/frontend/$1"
+    }
+  ]
 }
