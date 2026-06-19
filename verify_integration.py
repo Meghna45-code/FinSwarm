@@ -8,6 +8,19 @@ from backend.app.services.debate_room import DebateRoom
 from backend.app.services.llm_client import GeminiLlmClient
 
 async def main():
+    # Load env manually
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    env_path = os.path.join(current_dir, ".env")
+    if os.path.exists(env_path):
+        with open(env_path, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#"):
+                    continue
+                if "=" in line:
+                    key, val = line.split("=", 1)
+                    os.environ[key.strip()] = val.strip().strip("\"'")
+
     profile = CompanyProfile(
         ticker="TSLA",
         name="Tesla Inc",

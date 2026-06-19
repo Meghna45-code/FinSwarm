@@ -14,9 +14,8 @@ async def send_reset_email(to_email: str, pin: str) -> bool:
     smtp_port = int(os.getenv("SMTP_PORT", "587"))
     smtp_user = os.getenv("SMTP_USER", "")
     
-    # SAFELY strip outer whitespace only. 
-    # Do NOT put spaces in your App Password in the .env file!
-    smtp_password = os.getenv("SMTP_PASSWORD", "").strip()
+    # Strip all whitespace (including internal spaces from Gmail App Passwords)
+    smtp_password = os.getenv("SMTP_PASSWORD", "").replace(" ", "").strip()
     
     if not smtp_user or not smtp_password:
         logger.warning("[EMAIL WARNING] SMTP credentials not set. Reset PIN printed to console only.")

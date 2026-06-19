@@ -8,9 +8,9 @@ class NewsAssessmentSchema(BaseModel):
 
 class FactCheckSchema(BaseModel):
     is_valid: bool = Field(description="true if claims are accurate or no target stats cited, false if they hallucinated/falsified numbers")
-    correction: Optional[str] = Field(None, description="A short note correcting the lie (e.g. 'Moderator Note: ...') or null if valid")
-    suggested_penalty: float = Field(1.0, description="A multiplier (e.g. 0.1 for falsified statements, 1.0 for valid)")
-    cited_source: Optional[str] = Field(None, description="The specific source/metric/event name from the company profile used as verification reference (e.g., 'Key Metrics: Revenue' or 'Historical News: Earnings Beat').")
+    correction: Optional[str] = Field(description="A short note correcting the lie (e.g. 'Moderator Note: ...') or null if valid")
+    suggested_penalty: float = Field(description="A multiplier (e.g. 0.1 for falsified statements, 1.0 for valid)")
+    cited_source: Optional[str] = Field(description="The specific source/metric/event name from the company profile used as verification reference (e.g., 'Key Metrics: Revenue' or 'Historical News: Earnings Beat') or null if none.")
 
 class AgentArgumentSchema(BaseModel):
     internal_monologue: str = Field(description="Your private thoughts evaluating other arguments and news")

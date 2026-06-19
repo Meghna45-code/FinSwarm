@@ -1,5 +1,25 @@
 import os
 import sys
+import io
+
+# Force stdout/stderr to UTF-8 on Windows to prevent UnicodeEncodeError when printing emojis or unicode characters.
+if sys.stdout and hasattr(sys.stdout, 'encoding') and (sys.stdout.encoding is None or sys.stdout.encoding.lower() != 'utf-8'):
+    try:
+        sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+    except AttributeError:
+        try:
+            sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+        except Exception:
+            pass
+if sys.stderr and hasattr(sys.stderr, 'encoding') and (sys.stderr.encoding is None or sys.stderr.encoding.lower() != 'utf-8'):
+    try:
+        sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+    except AttributeError:
+        try:
+            sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
+        except Exception:
+            pass
+
 import logging
 import json
 import hashlib
@@ -600,6 +620,16 @@ async def run_simulation_endpoint(req: SimulationRequest, email: str = Depends(g
     print(f"--- [API DEBUG] Received simulate request by {email} for: {req.news_content[:50]}... ---")
     try:
         api_key = x_gemini_api_key or os.getenv("GEMINI_API_KEY")
+        if api_key:
+            try:
+                import google.generativeai as genai
+                genai.configure(api_key=api_key)
+                print("--- [API DEBUG] Available Gemini Models: ---")
+                for m in genai.list_models():
+                    print(f"  - {m.name} ({m.supported_generation_methods})")
+                print("------------------------------------------")
+            except Exception as ex:
+                print(f"--- [API DEBUG] Failed to list models: {ex} ---")
         llm_client = GeminiLlmClient(api_key=api_key) if api_key else None
         
         if req.custom_agents:
@@ -616,7 +646,11 @@ async def run_simulation_endpoint(req: SimulationRequest, email: str = Depends(g
                     bad_news_reaction=details.get("bad_news_reaction", ""),
                     initial_sentiment=safe_float(details.get("initial_sentiment"), 0.0),
                     initial_conviction=safe_float(details.get("initial_conviction"), 0.5),
-                    reactivity_threshold=safe_float(details.get("reactivity_threshold"), 0.3)
+                    reactivity_threshold=safe_float(details.get("reactivity_threshold"), 0.3),
+                    market_influence_weight=safe_float(details.get("market_influence_weight"), 0.2),
+                    social_influence_susceptibility=safe_float(details.get("social_influence_susceptibility"), 0.5),
+                    risk_tolerance=safe_float(details.get("risk_tolerance"), 0.5),
+                    expertise_domains=details.get("expertise_domains", [])
                 )
         else:
             personas = initialize_personas()

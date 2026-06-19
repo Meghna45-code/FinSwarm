@@ -71,7 +71,10 @@ async function loadHistoricalDebate(debateId) {
     renderCompanyProfile(companyData);
     
     // Set debate timeline news title
-    document.getElementById('debate-running-news').textContent = details.news_content;
+    const runningNewsEl = document.getElementById('debate-running-news');
+    if (runningNewsEl) {
+      runningNewsEl.textContent = details.news_content;
+    }
     document.getElementById('debate-news-impact').textContent = `${Math.round(details.news_analysis.impact * 100)}%`;
     document.getElementById('debate-news-sentiment').textContent = details.news_analysis.sentiment.toFixed(2);
     

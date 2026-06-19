@@ -1,0 +1,14 @@
+{
+  "experimentalServices": {
+    "frontend": {
+      "entrypoint": "frontend",
+      "routePrefix": "/",
+      "framework": "static"
+    },
+    "backend": {
+      "entrypoint": "backend/app/main.py",
+      "routePrefix": "/backend",
+      "framework": "fastapi"
+    }
+  }
+}

@@ -259,6 +259,7 @@ function filterAgents() {
 
 function initLiveMonitorColumn() {
   const grid = document.getElementById('live-agent-monitor-grid');
+  if (!grid) return;
   grid.innerHTML = '';
   
   Object.entries(activeAgents).forEach(([name, persona]) => {
@@ -444,7 +445,7 @@ function appendTurnToTimeline(turn) {
           <strong>${title}:</strong> ${escapeHTML(messageText)}
           ${turn.cited_source ? `
             <div class="fact-check-source" style="margin-top: 4px; font-size: 0.78rem; opacity: 0.95;">
-              <i class="fa-solid fa-file-contract"></i> Verification Source: <span style="font-weight: 600; text-decoration: underline;">${escapeHTML(turn.cited_source)}</span>
+              <i class="fa-solid fa-file-contract"></i> Verification Source: <span onclick="openVerificationModal(${turn.turn})" style="font-weight: 600; text-decoration: underline; cursor: pointer; color: var(--color-lavender);" role="button" tabindex="0">${escapeHTML(turn.cited_source)}</span>
             </div>
           ` : ''}
         </div>
@@ -463,7 +464,7 @@ function appendTurnToTimeline(turn) {
           <strong>${title}:</strong> ${escapeHTML(turn.moderator_note)}
           ${turn.cited_source ? `
             <div class="fact-check-source" style="margin-top: 4px; font-size: 0.78rem; opacity: 0.95;">
-              <i class="fa-solid fa-file-contract"></i> Verification Source: <span style="font-weight: 600; text-decoration: underline;">${escapeHTML(turn.cited_source)}</span>
+              <i class="fa-solid fa-file-contract"></i> Verification Source: <span onclick="openVerificationModal(${turn.turn})" style="font-weight: 600; text-decoration: underline; cursor: pointer; color: var(--color-lavender);" role="button" tabindex="0">${escapeHTML(turn.cited_source)}</span>
             </div>
           ` : ''}
         </div>
@@ -521,7 +522,7 @@ function updateTurnFactCheckInDOM(turn) {
           <strong>${title}:</strong> ${escapeHTML(messageText)}
           ${turn.cited_source ? `
             <div class="fact-check-source" style="margin-top: 4px; font-size: 0.78rem; opacity: 0.95;">
-              <i class="fa-solid fa-file-contract"></i> Verification Source: <span style="font-weight: 600; text-decoration: underline;">${escapeHTML(turn.cited_source)}</span>
+              <i class="fa-solid fa-file-contract"></i> Verification Source: <span onclick="openVerificationModal(${turn.turn})" style="font-weight: 600; text-decoration: underline; cursor: pointer; color: var(--color-lavender);" role="button" tabindex="0">${escapeHTML(turn.cited_source)}</span>
             </div>
           ` : ''}
         </div>

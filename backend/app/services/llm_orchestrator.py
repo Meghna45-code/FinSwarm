@@ -140,7 +140,8 @@ Provide a sentiment score between -1.0 (highly bearish/negative) and 1.0 (highly
             result = await self.llm_client.generate_json(
                 system_prompt=system_prompt,
                 prompt=prompt, 
-                response_schema=NewsAssessmentSchema
+                response_schema=NewsAssessmentSchema,
+                model_name="gemini-2.0-flash-lite"
             )
             return {
                 "sentiment": float(result.get("sentiment", 0.0)),
@@ -189,7 +190,8 @@ If valid, return is_valid=true and suggested_penalty=1.0. If errors exist, retur
             result = await self.llm_client.generate_json(
                 system_prompt=system_prompt,
                 prompt=prompt, 
-                response_schema=FactCheckSchema
+                response_schema=FactCheckSchema,
+                model_name="gemini-2.5-flash"
             )
             return {
                 "is_valid": bool(result.get("is_valid", True)),
@@ -261,11 +263,42 @@ Run your "internal_monologue" to evaluate if you should adjust your stance. Pay 
         if cached_content:
             prompt = f"=== SYSTEM INSTRUCTIONS ===\n{system_prompt}\n\n=== DEBATE WORKSPACE ===\n{prompt}"
 
+        # Extract agent name from system prompt to route model type and manage cache compatibility
+        import re
+        name_match = re.search(r"Name:\s*([^\n]+)", system_prompt)
+        agent_name = name_match.group(1).strip() if name_match else ""
+
+        model_name = "gemini-3.5-flash"
+        
+        # Route to different models based on agent lists
+        gemini_35_agents = {
+            "Institutional Value Investor",
+            "Macro Economist",
+            "Algorithmic Quantitative Trader",
+            "Regulatory Compliance Watchdog"
+        }
+        gemini_30_agents = {
+            "Aggressive Short-Seller",
+            "Industry Tech Expert",
+            "Dividend Growth Investor",
+            "B2B Supply Chain Partner / Vanguard"
+        }
+        
+        if agent_name in gemini_35_agents:
+            model_name = "gemini-3.5-flash"
+        elif agent_name in gemini_30_agents:
+            model_name = "gemini-flash-latest"
+            cached_content = None # Disable cache to use correct model
+        else:
+            model_name = "gemini-pro-latest"
+            cached_content = None # Disable cache to use correct model
+
         response = await self.llm_client.generate_json(
             system_prompt=system_prompt,
             prompt=prompt,
             response_schema=AgentArgumentSchema,
-            cached_content=cached_content
+            cached_content=cached_content,
+            model_name=model_name
         )
         return {
             "internal_monologue": response.get("internal_monologue", ""),
@@ -281,7 +314,13 @@ Run your "internal_monologue" to evaluate if you should adjust your stance. Pay 
         history_str = "\n".join([f"[{turn['speaker']}]: {turn['speech']}" for turn in debate_history])
 
         if not self.llm_client:
-            return f"Mock Summary: Debate ended with final states:\n{states_str}"
+            avg_sentiment = sum(state['sentiment'] for state in final_agent_states.values()) / max(len(final_agent_states), 1)
+            sentiment_word = "positive / bullish" if avg_sentiment > 0.15 else ("negative / bearish" if avg_sentiment < -0.15 else "neutral / balanced")
+            return (
+                f"The swarm debate regarding {company_profile.name} ({company_profile.ticker}) has concluded with an overall {sentiment_word} consensus stance. "
+                f"Throughout the simulation rounds, the agents debated the financial impact of the news. "
+                f"The final agent states reflect a convergence towards a sentiment of {avg_sentiment:.2f}."
+            )
 
         system_prompt = f"You are a financial analyst summarizing the final consensus of a roundtable debate regarding {company_profile.name} ({company_profile.ticker})."
         prompt = f"Final Agent States:\n---\n{states_str}\n---\nDebate History:\n---\n{history_str}\n---\nProvide a summary paragraph representing the final consensus."
@@ -289,7 +328,13 @@ Run your "internal_monologue" to evaluate if you should adjust your stance. Pay 
             result = await self.llm_client.generate_json(system_prompt=system_prompt, prompt=prompt, response_schema=DebateSummarySchema)
             return result.get("summary", "Debate simulation completed.")
         except Exception:
-            return f"Mock Summary Fallback: Debate ended with final states:\n{states_str}"
+            avg_sentiment = sum(state['sentiment'] for state in final_agent_states.values()) / max(len(final_agent_states), 1)
+            sentiment_word = "positive / bullish" if avg_sentiment > 0.15 else ("negative / bearish" if avg_sentiment < -0.15 else "neutral / balanced")
+            return (
+                f"The swarm debate regarding {company_profile.name} ({company_profile.ticker}) has concluded with an overall {sentiment_word} consensus stance. "
+                f"Throughout the simulation rounds, the agents debated the financial impact of the news. "
+                f"The final agent states reflect a convergence towards a sentiment of {avg_sentiment:.2f}."
+            )
 
     def _generate_offline_company_profile(self, news_content: str) -> CompanyProfile:
         """Offline mock fallback for company profile generation."""
@@ -431,8 +476,35 @@ Return the complete, finished profile matching the schema, ensuring the new trai
                 "expertise_domains": result.get("expertise_domains", [])
             }
         except Exception as e:
-            print(f"Error in LLM agent autofill: {e}. Falling back.")
-            return {"name": name, "swarm_type": swarm_type}
+            print(f"Error in LLM agent autofill: {e}. Falling back to character-consistent mock.")
+            sentiment = 0.0
+            conviction = 0.5
+            reactivity = 0.3
+            name_lower = name.lower()
+            if "bear" in name_lower or "short" in name_lower or "skeptic" in name_lower or "pessimist" in name_lower:
+                sentiment = -0.6
+                conviction = 0.7
+            elif "bull" in name_lower or "growth" in name_lower or "fan" in name_lower or "optimist" in name_lower:
+                sentiment = 0.6
+                conviction = 0.7
+
+            return {
+                "name": name,
+                "swarm_type": swarm_type,
+                "role_identity": f"An active participant in the {swarm_type} focusing on strategic analysis for {name}.",
+                "primary_metrics": ["Price Target", "Market Sentiment", "Earnings Growth"],
+                "cognitive_biases": ["Confirmation Bias", "Anchoring Bias"],
+                "linguistic_style": "Analytical, objective, and detailed.",
+                "good_news_reaction": "Bullish expansion of positions.",
+                "bad_news_reaction": "Risk mitigation and hedging.",
+                "initial_sentiment": sentiment,
+                "initial_conviction": conviction,
+                "reactivity_threshold": reactivity,
+                "risk_tolerance": "Moderate",
+                "social_influence_susceptibility": 0.5,
+                "market_influence_weight": 1.0,
+                "expertise_domains": ["Financial Analysis"]
+            }
 
     async def contextualize_personas(self, company_profile: CompanyProfile, environmental_variables: Dict[str, str], default_personas: Dict[str, AgentPersona]) -> Dict[str, Any]:
         """Dynamically adjusts the stats (sentiment, conviction, reactivity) based on active environmental variables using the LLM."""

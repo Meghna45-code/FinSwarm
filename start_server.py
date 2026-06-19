@@ -11,8 +11,28 @@ import asyncio
 import socket
 import sys
 import os
+import io
+
+# Force stdout/stderr to UTF-8 on Windows to prevent UnicodeEncodeError when printing emojis or unicode characters.
+if sys.stdout and hasattr(sys.stdout, 'encoding') and (sys.stdout.encoding is None or sys.stdout.encoding.lower() != 'utf-8'):
+    try:
+        sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+    except AttributeError:
+        try:
+            sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+        except Exception:
+            pass
+if sys.stderr and hasattr(sys.stderr, 'encoding') and (sys.stderr.encoding is None or sys.stderr.encoding.lower() != 'utf-8'):
+    try:
+        sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+    except AttributeError:
+        try:
+            sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
+        except Exception:
+            pass
 
 import uvicorn
+
 
 
 async def main():

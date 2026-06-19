@@ -1,9 +1,12 @@
 /* ==================== 4. LIVE DEBATE TIMELINE & VIEWPORT ==================== */
 #viewport-live-debate {
   padding: 0;
-  display: flex;
+  display: none;
   flex-direction: column;
   position: relative;
+}
+#viewport-live-debate.active {
+  display: flex;
 }
 
 /* Floating Impact/Sentiment badge — top-left corner, zero layout impact */

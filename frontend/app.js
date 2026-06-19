@@ -1,7 +1,8 @@
 // ==================== APP STATE & VARIABLES ====================
 let currentUser = null;
 let currentTutorialSlide = 0;
-let selectedMode = 'debate'; // 'debate', 'silent'
+let selectedMode = 'debate';
+let currentView = 'silent'; // 'silent' (direct results), 'debate'
 let simulationResult = null;
 let personasData = {};
 let defaultAgentsData = {};
@@ -25,6 +26,9 @@ let uiPlaybackQueue = [];
 let isProcessingQueue = false;
 let streamFinished = false;
 let shouldAutoSkipToVerdict = false;
+let silentProgressInterval = null;
+let silentFactInterval = null;
+let silentProgressPercent = 0;
 
 // Sliders manual override flags
 let sentimentManuallySet = false;
@@ -52,6 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initVoiceRecognition();
   adjustFloatingEditControls();
   window.addEventListener('resize', adjustFloatingEditControls);
+  setSimulationView('silent');
 });
 
 // Auth Flow handlers have been moved to auth.js
@@ -207,32 +212,62 @@ function setInputPrompt(cardElement) {
   chatInput.focus();
 }
 
-function toggleModeDropdown() {
-  document.getElementById('mode-dropdown').classList.toggle('hidden');
+function toggleViewDropdown() {
+  document.getElementById('view-dropdown').classList.toggle('hidden');
 }
 
-function setSimulationMode(mode) {
-  selectedMode = mode;
-  document.getElementById('mode-dropdown').classList.add('hidden');
+function setSimulationView(view) {
+  currentView = view;
+  document.getElementById('view-dropdown').classList.add('hidden');
   
-  document.querySelectorAll('.dropdown-option').forEach(opt => {
+  document.querySelectorAll('#view-dropdown .dropdown-option').forEach(opt => {
     opt.classList.remove('active');
   });
-  document.querySelector(`.dropdown-option[data-mode="${mode}"]`).classList.add('active');
+  document.querySelector(`#view-dropdown .dropdown-option[data-view="${view}"]`).classList.add('active');
   
-  const indicator = document.getElementById('mode-bubble');
+  const viewToggleBtn = document.getElementById('view-toggle-btn');
   const badge = document.getElementById('active-mode-badge');
   
-  let label = 'Live Debate';
-  let iconHtml = '<i class="fa-solid fa-comments"></i>';
+  let label = 'Direct Results';
+  let iconHtml = '<i class="fa-solid fa-bolt text-blue"></i>';
   
-  if (mode === 'silent') {
-    label = 'Silent Consensus';
-    iconHtml = '<i class="fa-solid fa-bolt text-blue"></i>';
+  if (view === 'debate') {
+    label = 'Live Debate';
+    iconHtml = '<i class="fa-solid fa-comments text-purple"></i>';
   }
   
-  indicator.innerHTML = `${iconHtml} <span>${label}</span>`;
-  badge.innerHTML = `${iconHtml} ${label} Mode`;
+  if (viewToggleBtn) {
+    viewToggleBtn.innerHTML = iconHtml;
+  }
+  if (badge) {
+    badge.innerHTML = `${iconHtml} ${label} Mode`;
+  }
+  
+  // Viewport switching if a simulation has been loaded or run
+  if (simulationResult) {
+    const inlineControls = document.getElementById('debate-inline-controls');
+    const isPlaybackActive = !streamFinished || uiPlaybackQueue.length > 0;
+    
+    if (view === 'silent') {
+      if (isPlaybackActive) {
+        showViewport('viewport-silent-consensus');
+        runSilentLoader();
+      } else {
+        showViewport('viewport-final-verdict');
+      }
+      if (inlineControls) inlineControls.classList.add('hidden');
+    } else {
+      showViewport('viewport-live-debate');
+      if (inlineControls) inlineControls.classList.remove('hidden');
+      
+      const container = document.getElementById('debate-timeline-messages');
+      if (container) {
+        setTimeout(() => {
+          container.scrollTop = container.scrollHeight;
+        }, 50);
+      }
+    }
+  }
 }
 
 function toggleAttachmentMenu() {
@@ -363,26 +398,34 @@ async function submitSimulation() {
   }
   isPlaybackPaused = false;
   currentPlaybackIndex = 0;
+  silentProgressPercent = 0;
   
   inputEl.value = '';
   autoResizeTextarea(inputEl);
   simulationResult = null;
   
   document.getElementById('attachment-menu').classList.add('hidden');
-  document.getElementById('mode-dropdown').classList.add('hidden');
+  if (document.getElementById('view-dropdown')) {
+    document.getElementById('view-dropdown').classList.add('hidden');
+  }
   
-  if (selectedMode === 'silent') {
+  // Always set up debate timeline metadata in the background
+  const runningNewsEl = document.getElementById('debate-running-news');
+  if (runningNewsEl) {
+    runningNewsEl.textContent = newsText + (attachedFileName ? ` (Attached: ${attachedFileName})` : '');
+  }
+  document.getElementById('debate-timeline-messages').innerHTML = `
+    <div class="sidebar-loader" style="margin: auto;">
+      <div class="spinner"></div>
+      <span>Moderator assessing news and compiling profiles...</span>
+    </div>
+  `;
+
+  if (currentView === 'silent') {
     showViewport('viewport-silent-consensus');
     runSilentLoader();
   } else {
     showViewport('viewport-live-debate');
-    document.getElementById('debate-running-news').textContent = newsText + (attachedFileName ? ` (Attached: ${attachedFileName})` : '');
-    document.getElementById('debate-timeline-messages').innerHTML = `
-      <div class="sidebar-loader" style="margin: auto;">
-        <div class="spinner"></div>
-        <span>Moderator assessing news and compiling profiles...</span>
-      </div>
-    `;
   }
   
   try {
@@ -407,6 +450,15 @@ function resetToWorkspace() {
     clearTimeout(playbackTimeoutId);
     playbackTimeoutId = null;
   }
+  if (silentProgressInterval) {
+    clearInterval(silentProgressInterval);
+    silentProgressInterval = null;
+  }
+  if (silentFactInterval) {
+    clearInterval(silentFactInterval);
+    silentFactInterval = null;
+  }
+  silentProgressPercent = 0;
   isPlaybackPaused = false;
   currentPlaybackIndex = 0;
   simulationResult = null;
@@ -418,32 +470,41 @@ function resetToWorkspace() {
 
 // --- SILENT CONSENSUS LOADERS ---
 function runSilentLoader() {
+  if (silentProgressInterval) clearInterval(silentProgressInterval);
+  if (silentFactInterval) clearInterval(silentFactInterval);
+
   const progressBar = document.getElementById('silent-progress-bar');
   const progressLabel = document.getElementById('silent-progress-label');
-  progressBar.style.width = '0%';
+  
+  let currentPercent = silentProgressPercent || 0;
+  progressBar.style.width = `${currentPercent.toFixed(1)}%`;
   
   const fadedFactContainer = document.getElementById('silent-faded-facts-container');
   const fadedFactEl = document.getElementById('silent-faded-fact');
-  const facts = (companyData && companyData.one_sentence_facts) || DEFAULT_FALLBACK_FACTS;
+  const getLatestFacts = () => (companyData && companyData.one_sentence_facts && companyData.one_sentence_facts.length > 0) ? companyData.one_sentence_facts : DEFAULT_FALLBACK_FACTS;
   
   let factIdx = 0;
-  fadedFactEl.textContent = facts[factIdx % facts.length];
+  const initialFacts = getLatestFacts();
+  fadedFactEl.textContent = initialFacts[factIdx % initialFacts.length];
   if (fadedFactContainer) fadedFactContainer.style.opacity = 0.45;
 
-  const factInterval = setInterval(() => {
+  silentFactInterval = setInterval(() => {
     if (fadedFactContainer) fadedFactContainer.style.opacity = 0;
     setTimeout(() => {
       factIdx++;
-      fadedFactEl.textContent = facts[factIdx % facts.length];
+      const currentFacts = getLatestFacts();
+      fadedFactEl.textContent = currentFacts[factIdx % currentFacts.length];
       if (fadedFactContainer) fadedFactContainer.style.opacity = 0.45;
     }, 500);
   }, 3500);
 
-  let currentPercent = 0;
-  const progressInterval = setInterval(() => {
-    if (simulationResult !== null && streamFinished) {
-      clearInterval(progressInterval);
-      clearInterval(factInterval);
+  silentProgressInterval = setInterval(() => {
+    if (simulationResult !== null && streamFinished && uiPlaybackQueue.length === 0) {
+      clearInterval(silentProgressInterval);
+      clearInterval(silentFactInterval);
+      silentProgressInterval = null;
+      silentFactInterval = null;
+      silentProgressPercent = 0;
       progressBar.style.width = '100%';
       progressLabel.textContent = 'Rendering final results...';
       setTimeout(() => {
@@ -460,6 +521,7 @@ function runSilentLoader() {
         currentPercent += 0.2;
       }
       currentPercent = Math.min(95, currentPercent);
+      silentProgressPercent = currentPercent;
       progressBar.style.width = `${currentPercent.toFixed(1)}%`;
       
       if (currentPercent < 25) {
@@ -510,23 +572,11 @@ function renderNextPlaybackTurn() {
   
   const transcript = simulationResult.transcript;
   if (currentPlaybackIndex >= transcript.length) {
-    const container = document.getElementById('debate-timeline-messages');
-    const transitionDiv = document.createElement('div');
-    transitionDiv.className = 'verdict-footer-controls';
-    transitionDiv.style.animation = 'fadeIn 0.5s ease-out';
-    transitionDiv.innerHTML = `
-      <button class="btn btn-primary" onclick="renderFinalVerdict()">
-        <i class="fa-solid fa-chart-pie"></i> View Final Swarm Verdict & Projections
-      </button>
-    `;
-    container.appendChild(transitionDiv);
-    container.scrollTop = container.scrollHeight;
-    
     const pauseBtn = document.getElementById('btn-pause-debate');
     if (pauseBtn) pauseBtn.disabled = true;
-    // Hide inline controls when debate ends naturally
     const inlineControls = document.getElementById('debate-inline-controls');
     if (inlineControls) inlineControls.classList.add('hidden');
+    renderFinalVerdict();
     return;
   }
   
@@ -657,29 +707,10 @@ async function runUIPlaybackLoop() {
       const skipLoader = document.getElementById('debate-skip-loader');
       if (skipLoader) skipLoader.remove();
       
-      if (shouldAutoSkipToVerdict) {
-        renderFinalVerdict();
-        return;
-      }
+      const inlineControls = document.getElementById('debate-inline-controls');
+      if (inlineControls) inlineControls.classList.add('hidden');
       
-      const container = document.getElementById('debate-timeline-messages');
-      if (container && !container.querySelector('.btn-primary i.fa-chart-pie')) {
-        const transitionDiv = document.createElement('div');
-        transitionDiv.className = 'verdict-footer-controls';
-        transitionDiv.style.animation = 'fadeIn 0.5s ease-out';
-        transitionDiv.innerHTML = `
-          <button class="btn btn-primary" onclick="renderFinalVerdict()">
-            <i class="fa-solid fa-chart-pie"></i> View Final Swarm Verdict & Projections
-          </button>
-        `;
-        container.appendChild(transitionDiv);
-        container.scrollTop = container.scrollHeight;
-        
-        const pauseBtn = document.getElementById('btn-pause-debate');
-        if (pauseBtn) {
-          pauseBtn.disabled = true;
-        }
-      }
+      renderFinalVerdict();
     }
     return;
   }
@@ -703,7 +734,7 @@ async function runUIPlaybackLoop() {
     
     currentPlaybackIndex = turn.turn;
 
-    if (isVoiceActive) {
+    if (isVoiceActive && currentView === 'debate') {
       try {
         await speakTurn(turn.speaker, turn.speech);
       } catch (err) {
@@ -711,7 +742,7 @@ async function runUIPlaybackLoop() {
       }
       await new Promise(resolve => setTimeout(resolve, 800));
     } else {
-      await new Promise(resolve => setTimeout(resolve, 2200));
+      await new Promise(resolve => setTimeout(resolve, currentView === 'debate' ? 2200 : 500));
     }
   } else if (event.type === 'fact_check') {
     const fc = event.data;
@@ -774,7 +805,13 @@ async function processSimulationStream(response, isResume = false) {
               simulationResult.company_profile = companyData;
               renderCompanyProfile(companyData);
               
-              if (selectedMode === 'debate' && !isResume) {
+              // Immediately show the first fact of the new company in the loader
+              const fadedFactEl = document.getElementById('silent-faded-fact');
+              if (fadedFactEl && companyData.one_sentence_facts && companyData.one_sentence_facts.length > 0) {
+                fadedFactEl.textContent = companyData.one_sentence_facts[0];
+              }
+
+              if (!isResume) {
                 const container = document.getElementById('debate-timeline-messages');
                 container.innerHTML = '';
                 switchSidebarTab('agents');
@@ -786,14 +823,18 @@ async function processSimulationStream(response, isResume = false) {
                   pauseBtn.disabled = false;
                 }
                 const inlineControls = document.getElementById('debate-inline-controls');
-                if (inlineControls) inlineControls.classList.remove('hidden');
+                if (inlineControls) {
+                  if (currentView === 'debate') {
+                    inlineControls.classList.remove('hidden');
+                  } else {
+                    inlineControls.classList.add('hidden');
+                  }
+                }
               }
             } else if (event.type === 'news_analysis') {
               simulationResult.news_analysis = event.data;
-              if (selectedMode === 'debate') {
-                document.getElementById('debate-news-impact').textContent = `${Math.round(event.data.impact * 100)}%`;
-                document.getElementById('debate-news-sentiment').textContent = event.data.sentiment.toFixed(2);
-              }
+              document.getElementById('debate-news-impact').textContent = `${Math.round(event.data.impact * 100)}%`;
+              document.getElementById('debate-news-sentiment').textContent = event.data.sentiment.toFixed(2);
             } else if (event.type === 'state_update') {
               simulationResult.state_tracking.push(event.data);
             } else if (event.type === 'turn') {
@@ -851,26 +892,66 @@ async function processSimulationStream(response, isResume = false) {
   }
 }
 
-// --- FINAL VERDICT PAGE ---
 function renderFinalVerdict() {
   showViewport('viewport-final-verdict');
   
-  const val = simulationResult.valuation;
+  // Synchronize view state to 'silent' (Direct Results Mode)
+  currentView = 'silent';
+  
+  document.querySelectorAll('#view-dropdown .dropdown-option').forEach(opt => {
+    opt.classList.remove('active');
+  });
+  const silentOpt = document.querySelector(`#view-dropdown .dropdown-option[data-view="silent"]`);
+  if (silentOpt) silentOpt.classList.add('active');
+  
+  const viewToggleBtn = document.getElementById('view-toggle-btn');
+  const badge = document.getElementById('active-mode-badge');
+  
+  let label = 'Direct Results';
+  let iconHtml = '<i class="fa-solid fa-bolt text-blue"></i>';
+  
+  if (viewToggleBtn) {
+    viewToggleBtn.innerHTML = iconHtml;
+  }
+  if (badge) {
+    badge.innerHTML = `${iconHtml} ${label} Mode`;
+  }
+  
+  const val = (simulationResult && simulationResult.valuation) ? simulationResult.valuation : null;
+  if (!val) {
+    console.error("Valuation data is missing from simulation result.");
+    document.getElementById('verdict-current-price').textContent = "$0.00";
+    document.getElementById('verdict-projected-price').textContent = "$0.00";
+    const changeEl = document.getElementById('verdict-change-percent');
+    if (changeEl) {
+      changeEl.textContent = "+0.00%";
+      changeEl.className = "val-value";
+    }
+    const summaryEl = document.getElementById('verdict-summary-text');
+    if (summaryEl) {
+      summaryEl.textContent = (simulationResult && simulationResult.debate_summary) || "Valuation model could not be computed.";
+    }
+    return;
+  }
   
   document.getElementById('verdict-current-price').textContent = `$${val.current_price.toFixed(2)}`;
   document.getElementById('verdict-projected-price').textContent = `$${val.final_projected_price.toFixed(2)}`;
   
   const pctChange = val.price_change_percent;
   const changeEl = document.getElementById('verdict-change-percent');
-  changeEl.textContent = `${pctChange > 0 ? '+' : ''}${pctChange.toFixed(2)}%`;
-  
-  if (pctChange >= 0) {
-    changeEl.className = "val-value text-glowing-green";
-  } else {
-    changeEl.className = "val-value text-glowing-red";
+  if (changeEl) {
+    changeEl.textContent = `${pctChange > 0 ? '+' : ''}${pctChange.toFixed(2)}%`;
+    if (pctChange >= 0) {
+      changeEl.className = "val-value text-glowing-green";
+    } else {
+      changeEl.className = "val-value text-glowing-red";
+    }
   }
   
-  document.getElementById('verdict-summary-text').textContent = simulationResult.debate_summary;
+  const summaryEl = document.getElementById('verdict-summary-text');
+  if (summaryEl) {
+    summaryEl.textContent = simulationResult.debate_summary;
+  }
   
   renderChart(val.historical_prices, val.projected_prices);
   renderAgentEndStates();

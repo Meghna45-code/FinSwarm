@@ -68,7 +68,7 @@ class GeminiLlmClient:
             logger.info("Creating new context cache on Gemini server...")
             # Create CachedContent on Gemini
             cache = caching.CachedContent.create(
-                model='models/gemini-1.5-flash-001',
+                model='models/gemini-3.5-flash',
                 display_name='finswarm_debate_context_cache',
                 contents=[caching_input],
                 ttl=datetime.timedelta(minutes=30)
@@ -92,7 +92,8 @@ class GeminiLlmClient:
         prompt: str, 
         system_prompt: Optional[str] = None, 
         response_schema: Optional[Any] = None,
-        cached_content: Optional[str] = None
+        cached_content: Optional[str] = None,
+        model_name: str = "gemini-3.5-flash"
     ) -> Dict[str, Any]:
         """
         Calls Gemini API asynchronously and enforces a JSON response format.
@@ -121,12 +122,11 @@ class GeminiLlmClient:
             except Exception as e:
                 logger.warning(f"Error loading model from cached content ({e}). Falling back to standard model.")
                 model = genai.GenerativeModel(
-                    model_name="gemini-1.5-flash",
+                    model_name=model_name,
                     system_instruction=system_prompt,
                     generation_config=generation_config
                 )
         else:
-            model_name = "gemini-1.5-flash"
             model = genai.GenerativeModel(
                 model_name=model_name,
                 system_instruction=system_prompt,

@@ -18,6 +18,7 @@ class ModeratorAgent:
         self.last_speaker_name: Optional[str] = None
         self.previous_speaker_name: Optional[str] = None
         self.speaker_history: List[str] = []
+        self.speak_count: Dict[str, int] = {}  # Tracks how many arguments each agent has spoken
 
     async def assess_news(self, news_content: str) -> Dict[str, float]:
         """Runs the standard news assessment via the LLM Orchestrator."""
@@ -57,14 +58,15 @@ class ModeratorAgent:
         self.last_speaker_name = None
         self.previous_speaker_name = None
         self.speaker_history.clear()
+        self.speak_count.clear()
 
     def evaluate_and_queue_speakers(self, speaker_name: str, argument_sentiment: float, argument_impact: float, agents_list: List[Any], room_d):
         """
         Broadcasting step:
-        Evaluates the interest of all listening agents based on Effective Impact, 
-        Provocation (Sentiment Friction), and Frequency Penalties.
+        Evaluates conversational interest and turn deficit for all agents to determine priority scores.
         """
-        # 1. Calculate Effective Impact (Argument Impact * Speaker Conviction)
+        self.speaker_queue.clear()
+
         speaker_conviction = 1.0
         if speaker_name != "SYSTEM_NEWS":
             try:
@@ -75,55 +77,59 @@ class ModeratorAgent:
 
         effective_impact = argument_impact * speaker_conviction
 
-        # Anti-ping-pong skip logic (needs at least 3 agents to function)
-        skip_previous = len(agents_list) > 2
-
         for agent in agents_list:
-            # Skip the current speaker to prevent monologue loops
+            # Skip the current speaker to prevent consecutive monologue
             if agent.persona.name == speaker_name:
-                continue
-            # Skip the previous speaker to prevent instant A-B-A-B ping-pong
-            if skip_previous and agent.persona.name == self.previous_speaker_name:
                 continue
 
             try:
                 state = room_d.get_agent_state(agent.persona.name)
-                listener_reactivity = state.get("reactivity_threshold", agent.reactivity_threshold)
-                listener_sentiment = state.get("sentiment", agent.initial_sentiment)
+                listener_reactivity = state.get("reactivity_threshold", agent.persona.reactivity_threshold)
+                listener_sentiment = state.get("sentiment", agent.persona.initial_sentiment)
             except Exception:
-                listener_reactivity = agent.reactivity_threshold
-                listener_sentiment = agent.initial_sentiment
+                listener_reactivity = agent.persona.reactivity_threshold
+                listener_sentiment = agent.persona.initial_sentiment
 
-            # 2. Provocation Bonus (absolute difference between argument sentiment and listener sentiment)
+            # 1. Base conversational interest (Friction/alignment and reactivity)
             provocation_bonus = abs(argument_sentiment - listener_sentiment)
+            interest = (effective_impact + provocation_bonus) - listener_reactivity
 
-            # 3. Base Priority Calculation
-            interest_delta = (effective_impact + provocation_bonus) - listener_reactivity
+            # 2. Deficit / Urgency score based on expected turn count
+            current_speeches = self.speak_count.get(agent.persona.name, 0)
+            # High sentiment agents naturally speak more (up to 10), while others target at least 6.
+            target_speeches = 6.0 + (abs(agent.persona.initial_sentiment) * 5.0)
 
-            # 4. Frequency Penalty: Penalize agents who have spoken recently
+            deficit = target_speeches - current_speeches
+
+            # Boost urgency strongly if below the absolute minimum requirement of 6 speeches
+            if current_speeches < 6:
+                urgency_boost = (6 - current_speeches) * 2.0
+            else:
+                urgency_boost = 0.0
+
+            deficit_bonus = deficit * 1.5
+
+            # 3. Frequency Penalty: Penalize agents who have spoken very recently
+            frequency_penalty = 0.0
             if agent.persona.name in self.speaker_history:
                 history_rev = list(reversed(self.speaker_history))
                 try:
                     pos = history_rev.index(agent.persona.name)
-                    # Pos 0 & 1 are usually caught by Anti-Ping-Pong, but we keep this as a safe fallback
                     if pos == 0:
-                        interest_delta -= 0.5
+                        frequency_penalty = 5.0  # Avoid back-to-back speaker
                     elif pos == 1:
-                        interest_delta -= 0.3
+                        frequency_penalty = 3.0
                     elif pos == 2:
-                        interest_delta -= 0.15
-                    else:
-                        interest_delta -= 0.05
+                        frequency_penalty = 1.5
+                    elif pos == 3:
+                        frequency_penalty = 0.5
                 except ValueError:
                     pass
 
-            # Queue the agent if they break their threshold
-            if interest_delta >= 0:
-                existing = next((item for item in self.speaker_queue if item["agent"].persona.name == agent.persona.name), None)
-                if existing:
-                    existing["priority"] = max(existing["priority"], interest_delta)
-                else:
-                    self.speaker_queue.append({"agent": agent, "priority": interest_delta})
+            # Combine scores into a final priority rating
+            priority = interest + urgency_boost + deficit_bonus - frequency_penalty
+
+            self.speaker_queue.append({"agent": agent, "priority": priority})
 
     def pop_next_speaker(self) -> Optional[Any]:
         """Pops the agent who is most interested/provoked by the topic."""
@@ -143,6 +149,9 @@ class ModeratorAgent:
         if len(self.speaker_history) > 4:
             self.speaker_history.pop(0)
             
+        # Record the speech count
+        self.speak_count[popped_agent.persona.name] = self.speak_count.get(popped_agent.persona.name, 0) + 1
+            
         return popped_agent
 
     def silence_breaker_fallback(self, agents_list: List[Any], room_d, count: int = 3):
@@ -153,9 +162,9 @@ class ModeratorAgent:
         def get_abs_sentiment(agent):
             try:
                 state = room_d.get_agent_state(agent.persona.name)
-                return abs(state.get("sentiment", agent.initial_sentiment))
+                return abs(state.get("sentiment", agent.persona.initial_sentiment))
             except Exception:
-                return abs(agent.initial_sentiment)
+                return abs(agent.persona.initial_sentiment)
 
         # Sort agents by highest absolute sentiment (closest to -1.0 or 1.0)
         sorted_agents = sorted(agents_list, key=get_abs_sentiment, reverse=True)
@@ -191,9 +200,17 @@ class ModeratorAgent:
         Evaluates stopping conditions:
         Consensus: If the sentiments of all agents in the room have converged close
         to each other (standard deviation < 0.15), the debate stops.
+        
+        Note: The debate cannot end until every agent has spoken at least 6 times.
         """
+        if room_d.agent_states:
+            # Do not allow consensus stopping until every agent has spoken at least 6 times
+            for agent_name in room_d.agent_states.keys():
+                if self.speak_count.get(agent_name, 0) < 6:
+                    return False
+
         if room_d.agent_states and turn_count >= 2:
-            sentiments = [state["sentiment"] for state in room_d.agent_states.values()]
+            sentiments = [state.sentiment for state in room_d.agent_states.values()]
             if len(sentiments) > 1:
                 mean_sent = sum(sentiments) / len(sentiments)
                 variance = sum((s - mean_sent) ** 2 for s in sentiments) / len(sentiments)

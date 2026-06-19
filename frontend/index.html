@@ -413,7 +413,7 @@
 
             <div class="input-group">
               <label for="env-custom">Custom Hypothetical Scenario</label>
-              <textarea id="env-custom" rows="2" placeholder="Write any specific situation (e.g. factory fire, major new contract)..."></textarea>
+              <textarea id="env-custom" rows="4" placeholder="Write any specific situation (e.g. factory fire, major new contract)..."></textarea>
             </div>
           </div>
         </div>
@@ -505,6 +505,25 @@
       </div>
     </div>
   </div>
+  <!-- ==================== VERIFICATION SOURCE DETAIL MODAL ==================== -->
+  <div id="verification-detail-modal" class="modal-overlay">
+    <div class="modal-content" style="max-width: 460px !important; padding: 25px !important;">
+      <div class="config-header" style="position: relative; text-align: left;">
+        <div class="config-logo" style="margin-bottom: 5px;">
+          <i class="fa-solid fa-shield-halved text-glowing"></i> Fact-Check Verification
+        </div>
+        <h2 id="verification-title" style="font-size: 1.25rem; margin-top: 5px; color: var(--text-main); font-weight: 700;">Verification Details</h2>
+        <button type="button" class="modal-close-btn" onclick="closeModal('verification-detail-modal')" style="position: absolute; top: 0px; right: 0px; background: transparent; border: none; color: var(--text-muted); font-size: 1.5rem; cursor: pointer;">&times;</button>
+      </div>
+      <div id="verification-body" style="margin-top: 15px; display: flex; flex-direction: column; gap: 12px; font-size: 0.88rem; line-height: 1.5; color: var(--text-main);">
+        <!-- Filled dynamically -->
+      </div>
+      <div style="margin-top: 20px; display: flex; justify-content: flex-end;">
+        <button class="btn btn-secondary btn-sm" onclick="closeModal('verification-detail-modal')">Close</button>
+      </div>
+    </div>
+  </div>
+
 
 
   <!-- ==================== MAIN DASHBOARD WORKSPACE ==================== -->
@@ -831,6 +850,7 @@
           <div id="debate-news-badge" class="debate-news-badge">
             <span class="badge score-impact"><i class="fa-solid fa-bolt"></i> Impact: <span id="debate-news-impact">0%</span></span>
             <span class="badge score-sentiment"><i class="fa-solid fa-scale-balanced"></i> Sentiment: <span id="debate-news-sentiment">0.0</span></span>
+            <span id="debate-running-news" style="display: none;"></span>
           </div>
 
           <div class="debate-workspace-split">
@@ -958,30 +978,31 @@
             </button>
           </div>
 
-          <!-- Selected Mode Summary Bubble -->
-          <div id="mode-bubble" class="mode-bubble-indicator" onclick="toggleModeDropdown()">
-            <i class="fa-solid fa-comments"></i> <span>Live Debate</span>
-          </div>
-          
-          <!-- Simulation Mode Select dropdown -->
-          <div id="mode-dropdown" class="mode-dropdown hidden">
-            <div class="dropdown-header">Simulation Mode</div>
-            <div class="dropdown-option active" data-mode="debate" onclick="setSimulationMode('debate')">
-              <div class="option-icon"><i class="fa-solid fa-comments text-purple"></i></div>
-              <div class="option-details">
-                <span class="option-title">Live Agent Debate</span>
-                <span class="option-desc">Watch agents debate and challenge stats in real time.</span>
-              </div>
-              <i class="fa-solid fa-check check-icon"></i>
-            </div>
+          <!-- View Selection Toggle Pop-up (next to mic) -->
+          <div class="view-toggle-container" style="position: relative; display: inline-block;">
+            <button id="view-toggle-btn" class="chat-circle-btn" title="Toggle Simulation View" onclick="toggleViewDropdown()">
+              <i class="fa-solid fa-bolt text-blue"></i>
+            </button>
             
-            <div class="dropdown-option" data-mode="silent" onclick="setSimulationMode('silent')">
-              <div class="option-icon"><i class="fa-solid fa-bolt text-blue"></i></div>
-              <div class="option-details">
-                <span class="option-title">Silent Consensus</span>
-                <span class="option-desc">Compute final calculations silently with a simple progress spinner.</span>
+            <div id="view-dropdown" class="mode-dropdown hidden" style="position: absolute; bottom: 50px; right: 0; width: 240px; z-index: 100;">
+              <div class="dropdown-header">Simulation Display</div>
+              <div class="dropdown-option active" data-view="silent" onclick="setSimulationView('silent')">
+                <div class="option-icon"><i class="fa-solid fa-bolt text-blue"></i></div>
+                <div class="option-details">
+                  <span class="option-title">Direct Results</span>
+                  <span class="option-desc">Show background calculations and faded facts.</span>
+                </div>
+                <i class="fa-solid fa-check check-icon"></i>
               </div>
-              <i class="fa-solid fa-check check-icon"></i>
+              
+              <div class="dropdown-option" data-view="debate" onclick="setSimulationView('debate')">
+                <div class="option-icon"><i class="fa-solid fa-comments text-purple"></i></div>
+                <div class="option-details">
+                  <span class="option-title">View Live Debate</span>
+                  <span class="option-desc">Watch active arguments and agent reasoning.</span>
+                </div>
+                <i class="fa-solid fa-check check-icon"></i>
+              </div>
             </div>
           </div>
           

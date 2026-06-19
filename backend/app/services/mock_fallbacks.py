@@ -312,11 +312,44 @@ def generate_offline_company_profile(news_content: str) -> CompanyProfile:
     else:
         # Extract the actual company name from the news_content string
         # e.g. "Profile for Goldman Sachs" → "Goldman Sachs"
-        company_name = news_content
+        cleaned = news_content.strip()
         for prefix in ["profile for ", "ticker ", "company "]:
-            if company_name.lower().startswith(prefix):
-                company_name = company_name[len(prefix):]
-        company_name = company_name.strip().title() or "Unknown Company"
+            if cleaned.lower().startswith(prefix):
+                cleaned = cleaned[len(prefix):]
+                break
+        
+        # Take the first line
+        cleaned = cleaned.split('\n')[0].strip()
+        
+        # Stop before common verbs/indicators in headlines
+        indicators = [
+            " abruptly", " suspends", " announces", " reports", " launches", 
+            " acquires", " buys", " sells", " faces", " hits", " drops", 
+            " surges", " jumps", " falls", " plummets", " beats", " misses", 
+            " declares", " posts", " plans", " files", " sues", " warns", 
+            " expects", " share", " stock", " ceo", " to ", " in ", " at ",
+            " for ", " on ", " with ", " is ", " has ", " will "
+        ]
+        
+        stop_idx = len(cleaned)
+        lower_cleaned = cleaned.lower()
+        for indicator in indicators:
+            idx = lower_cleaned.find(indicator)
+            if idx != -1 and idx < stop_idx:
+                stop_idx = idx
+                
+        for char in [":", " -", " —", " |"]:
+            idx = cleaned.find(char)
+            if idx != -1 and idx < stop_idx:
+                stop_idx = idx
+                
+        candidate = cleaned[:stop_idx].strip()
+        candidate = re.sub(r'[,.\-:\s]+$', '', candidate)
+        
+        if len(candidate) < 2:
+            company_name = cleaned[:30].strip().title() or "Unknown Company"
+        else:
+            company_name = candidate.title()
         ticker_guess = re.sub(r'[^A-Z]', '', company_name.upper())[:5] or "UNKN"
         
         # Calculate dynamic mock metrics based on company name length to make them realistic & stable
@@ -565,32 +598,133 @@ def offline_process_swarm_command(command: str, current_agents: Dict[str, Any]) 
                     updated[matched_agent]["reactivity_threshold"] = max(0.0, min(1.0, val))
 
     # 4. Check for adding
-    if "add" in cmd_lower:
-        name_match = re.search(r'named\s+([a-zA-Z0-9_\s\-]+?)(?:\s+who|\s+with|\s+to|$)', cmd_lower)
-        if not name_match:
-            name_match = re.search(r'add\s+(?:a\s+)?(?:new\s+)?([a-zA-Z0-9_\s\-]+?)(?:\s+who|\s+named|\s+with|\s+to|$)', cmd_lower)
-        
+    if "add" in cmd_lower or "create" in cmd_lower or "introduce" in cmd_lower:
+        # Extract name using named X pattern
+        name_match = re.search(r'\bnamed\s+([a-zA-Z0-9_\s\-]+?)(?:\s+who|\s+that|\s+does|\s+is|\s+focusing|\s+with|\s+to|\s+has|\b|$|\.|\,)', cmd_lower)
+        candidate_name = ""
         if name_match:
             candidate_name = name_match.group(1).strip().title()
-            exclude_words = ["agent", "persona", "day trader", "investor", "retailer", "short", "bull", "bear", "analyst"]
-            clean_name = " ".join([w for w in candidate_name.split() if w.lower() not in exclude_words]).strip()
-            if not clean_name:
+        else:
+            # Extract name using add X who pattern
+            pattern = r'\b(?:add|create|introduce)\s+(?:a\s+|an\s+|new\s+|additional\s+|another\s+)?(?:agent\s+|persona\s+|investor\s+|trader\s+)?([a-zA-Z0-9_\s\-]+?)(?:\s+who|\s+that|\s+does|\s+is|\s+focusing|\s+with|\s+to|\s+has|\b|$|\.|\,)'
+            add_match = re.search(pattern, cmd_lower)
+            if add_match:
+                candidate_name = add_match.group(1).strip().title()
+        
+        # Clean candidate_name of common descriptors
+        exclude_words = ["agent", "persona", "day trader", "investor", "retailer", "short", "bull", "bear", "analyst", "this", "additional", "new", "another", "the", "a", "an", "some"]
+        if candidate_name:
+            name_words = candidate_name.split()
+            clean_name = " ".join([w for w in name_words if w.lower() not in exclude_words]).strip()
+        else:
+            clean_name = ""
+            
+        if not clean_name or clean_name.lower() in ["agent", "persona", "investor", "trader"]:
+            # Auto-generate name based on content keywords
+            if "esg" in cmd_lower or "green" in cmd_lower or "sustain" in cmd_lower:
+                clean_name = "ESG Specialist"
+            elif "tech" in cmd_lower or "ai" in cmd_lower or "software" in cmd_lower or "semiconductor" in cmd_lower:
+                clean_name = "Tech Analyst"
+            elif "meme" in cmd_lower or "reddit" in cmd_lower or "hype" in cmd_lower or "wsb" in cmd_lower or "retail" in cmd_lower:
+                clean_name = "Meme Trader"
+            elif "value" in cmd_lower or "buffett" in cmd_lower or "dividend" in cmd_lower or "fundamental" in cmd_lower:
+                clean_name = "Value Investor"
+            elif "macro" in cmd_lower or "fed" in cmd_lower or "rate" in cmd_lower or "inflation" in cmd_lower:
+                clean_name = "Macro Strategist"
+            elif "short" in cmd_lower or "critic" in cmd_lower or "skeptic" in cmd_lower:
+                clean_name = "Short Seller"
+            elif "growth" in cmd_lower or "momentum" in cmd_lower or "trend" in cmd_lower:
+                clean_name = "Growth Investor"
+            elif "quant" in cmd_lower or "math" in cmd_lower or "algo" in cmd_lower or "data" in cmd_lower:
+                clean_name = "Quant Trader"
+            else:
                 clean_name = "Custom Persona"
 
-            if clean_name not in updated:
-                sent = 0.7 if "bull" in cmd_lower or "optimistic" in cmd_lower else (-0.7 if "bear" in cmd_lower or "pessimistic" in cmd_lower else 0.0)
-                updated[clean_name] = {
-                    "name": clean_name,
-                    "swarm_type": "Trading & Analytical Swarm" if "analyst" in cmd_lower or "quant" in cmd_lower else "Retail & Consumer Swarm",
-                    "role_identity": f"Custom agent {clean_name} added on conversational basis.",
-                    "primary_metrics": ["Stock Price", "Sentiment dynamics"],
-                    "cognitive_biases": ["Confirmation Bias"],
-                    "linguistic_style": "Informal and direct.",
-                    "good_news_reaction": "Favorable.",
-                    "bad_news_reaction": "Unfavorable.",
-                    "initial_sentiment": sent,
-                    "initial_conviction": 0.6,
-                    "reactivity_threshold": 0.25
-                }
+        # Ensure uniqueness
+        base_name = clean_name
+        counter = 1
+        while clean_name in updated:
+            clean_name = f"{base_name} {counter}"
+            counter += 1
+
+        # Extract role description
+        desc = ""
+        for delimiter in [r'\bwho focuses on\b', r'\bfocusing on\b', r'\bwho specializes in\b', r'\bspecializing in\b', r'\bwho does\b', r'\bthat does\b', r'\bwho is\b', r'\bthat is\b', r'\bwho has\b', r'\bthat has\b']:
+            matches = re.split(delimiter, cmd_lower, maxsplit=1)
+            if len(matches) > 1:
+                desc = matches[1].strip()
+                break
+        
+        if not desc:
+            desc = command
+            for w in ["add", "create", "introduce", "new", "additional", "another", "agent", "persona", "named", clean_name] + clean_name.split():
+                desc = re.sub(r'\b' + re.escape(w) + r'\b', '', desc, flags=re.IGNORECASE)
+            desc = desc.strip(" ,.!?")
+            
+        # Clean description of sentiment/conviction words to keep it professional
+        desc = re.sub(r'\b(?:and\s+)?(?:has\s+)?(?:highly\s+|very\s+|extremely\s+)?(?:bullish|bearish|neutral)\s+(?:sentiment|conviction|stance|attitude)?\b.*', '', desc, flags=re.IGNORECASE)
+        desc = desc.strip(" ,.!?")
+        
+        if desc:
+            desc = desc[0].upper() + desc[1:]
+        else:
+            desc = f"A customized agent focused on parsing market sentiment."
+
+        # Parse Sentiment
+        sent_val = 0.0
+        sent_match = re.search(r'sentiment\s+(?:of\s+)?(-?\d+(?:\.\d+)?)', cmd_lower)
+        if sent_match:
+            try:
+                sent_val = max(-1.0, min(1.0, float(sent_match.group(1))))
+            except ValueError:
+                pass
+        else:
+            if "highly bullish" in cmd_lower or "very bullish" in cmd_lower or "extremely bullish" in cmd_lower:
+                sent_val = 0.9
+            elif "highly bearish" in cmd_lower or "very bearish" in cmd_lower or "extremely bearish" in cmd_lower:
+                sent_val = -0.9
+            elif "bullish" in cmd_lower or "optimistic" in cmd_lower or "positive" in cmd_lower:
+                sent_val = 0.7
+            elif "bearish" in cmd_lower or "pessimistic" in cmd_lower or "negative" in cmd_lower:
+                sent_val = -0.7
+            elif "neutral" in cmd_lower or "flat" in cmd_lower:
+                sent_val = 0.0
+
+        # Parse Conviction
+        conv_val = 0.6
+        conv_match = re.search(r'conviction\s+(?:of\s+)?(\d+(?:\.\d+)?)(%?)', cmd_lower)
+        if conv_match:
+            try:
+                val = float(conv_match.group(1))
+                is_pct = conv_match.group(2) == '%'
+                if is_pct or val > 1.0:
+                    conv_val = max(0.0, min(1.0, val / 100.0))
+                else:
+                    conv_val = max(0.0, min(1.0, val))
+            except ValueError:
+                pass
+        else:
+            if "high conviction" in cmd_lower or "strong conviction" in cmd_lower or "highly convinced" in cmd_lower:
+                conv_val = 0.85
+            elif "low conviction" in cmd_lower or "weak conviction" in cmd_lower:
+                conv_val = 0.35
+
+        updated[clean_name] = {
+            "name": clean_name,
+            "swarm_type": "Trading & Analytical Swarm" if any(w in cmd_lower for w in ["analyst", "quant", "macro", "value", "short", "research", "expert"]) else "Retail & Consumer Swarm",
+            "role_identity": desc,
+            "primary_metrics": ["Stock Price", "Sentiment dynamics"],
+            "cognitive_biases": ["Confirmation Bias"],
+            "linguistic_style": "Informal and direct." if "retail" in cmd_lower or "meme" in cmd_lower else "Pragmatic and professional.",
+            "good_news_reaction": "Favorable.",
+            "bad_news_reaction": "Unfavorable.",
+            "initial_sentiment": sent_val,
+            "initial_conviction": conv_val,
+            "reactivity_threshold": 0.25,
+            "market_influence_weight": 0.2,
+            "social_influence_susceptibility": 0.5,
+            "risk_tolerance": 0.5,
+            "expertise_domains": []
+        }
 
     return updated

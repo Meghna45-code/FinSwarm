@@ -53,6 +53,55 @@ function closeModal(modalId) {
   document.getElementById(modalId).classList.remove('active');
 }
 
+function openModal(modalId) {
+  document.getElementById(modalId).classList.add('active');
+}
+
+function openVerificationModal(turnNumber) {
+  if (!simulationResult || !simulationResult.transcript) return;
+  const turn = simulationResult.transcript.find(t => t.turn === turnNumber);
+  if (!turn) return;
+  
+  const titleEl = document.getElementById('verification-title');
+  const bodyEl = document.getElementById('verification-body');
+  if (!titleEl || !bodyEl) return;
+  
+  const accuracyPercent = turn.factuality_score !== undefined && turn.factuality_score !== null 
+    ? Math.round(turn.factuality_score * 100) + '%' 
+    : 'N/A';
+  const isValid = turn.is_factually_correct;
+  const statusBadge = isValid 
+    ? `<span style="background: rgba(110, 231, 183, 0.2); color: #065f46; border: 1px solid rgba(110, 231, 183, 0.4); padding: 3px 8px; border-radius: 99px; font-weight: 600; font-size: 0.75rem; text-transform: uppercase;">Verified</span>`
+    : `<span style="background: rgba(243, 162, 190, 0.22); color: #be185d; border: 1px solid rgba(243, 162, 190, 0.45); padding: 3px 8px; border-radius: 99px; font-weight: 600; font-size: 0.75rem; text-transform: uppercase;">Fact Check Warning</span>`;
+    
+  titleEl.textContent = `Turn #${turn.turn} Verification`;
+  bodyEl.innerHTML = `
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
+      <strong>Agent:</strong> <span>${escapeHTML(turn.speaker)}</span>
+    </div>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
+      <strong>Status:</strong> ${statusBadge}
+    </div>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
+      <strong>Accuracy Score:</strong> <span>${accuracyPercent}</span>
+    </div>
+    <div style="margin-top: 8px;">
+      <strong>Cited Source:</strong>
+      <div style="background: rgba(129, 191, 183, 0.08); border: 1px solid rgba(129, 191, 183, 0.18); padding: 8px 12px; border-radius: var(--radius-sm); font-family: monospace; font-size: 0.8rem; margin-top: 4px; color: var(--text-main);">
+        ${escapeHTML(turn.cited_source || 'None cited')}
+      </div>
+    </div>
+    <div style="margin-top: 8px;">
+      <strong>Verification Run-down:</strong>
+      <div style="margin-top: 4px; padding: 10px; border-radius: var(--radius-sm); background: ${isValid ? 'rgba(110, 231, 183, 0.08)' : 'rgba(243, 162, 190, 0.08)'}; border: 1px solid ${isValid ? 'rgba(110, 231, 183, 0.2)' : 'rgba(243, 162, 190, 0.2)'}; color: var(--text-main); font-size: 0.85rem;">
+        ${escapeHTML(turn.moderator_note || (isValid ? 'The statement aligns with the ground truth company profile.' : 'Factual discrepancy detected.'))}
+      </div>
+    </div>
+  `;
+  
+  openModal('verification-detail-modal');
+}
+
 function handleAgentModalBackdropClick(event) {
   if (event.target === document.getElementById('agent-detail-modal')) {
     closeModal('agent-detail-modal');
@@ -270,7 +319,11 @@ function saveAgentFromForm() {
     bad_news_reaction: activeAgents[agentKey]?.bad_news_reaction || "Pessimistic.",
     initial_sentiment: sentiment,
     initial_conviction: conviction,
-    reactivity_threshold: reactivity
+    reactivity_threshold: reactivity,
+    market_influence_weight: activeAgents[agentKey]?.market_influence_weight !== undefined ? activeAgents[agentKey].market_influence_weight : 0.2,
+    social_influence_susceptibility: activeAgents[agentKey]?.social_influence_susceptibility !== undefined ? activeAgents[agentKey].social_influence_susceptibility : 0.5,
+    risk_tolerance: activeAgents[agentKey]?.risk_tolerance !== undefined ? activeAgents[agentKey].risk_tolerance : 0.5,
+    expertise_domains: activeAgents[agentKey]?.expertise_domains || []
   };
   
   renderConfigAgentsTable();
@@ -300,24 +353,33 @@ async function autofillAgentFromForm() {
   try {
     const completedAgent = await apiAutofillAgent(partialAgent, activeEnvironments, companyData);
     
-    document.getElementById('editor-swarm-type').value = completedAgent.swarm_type;
-    document.getElementById('editor-role').value = completedAgent.role_identity;
+    document.getElementById('editor-swarm-type').value = completedAgent.swarm_type || 'Retail & Consumer Swarm';
+    document.getElementById('editor-role').value = completedAgent.role_identity || '';
     
-    document.getElementById('editor-sentiment').value = completedAgent.initial_sentiment;
-    document.getElementById('editor-sentiment-val').textContent = parseFloat(completedAgent.initial_sentiment).toFixed(1);
+    const sentiment = (completedAgent.initial_sentiment !== undefined && completedAgent.initial_sentiment !== null) ? parseFloat(completedAgent.initial_sentiment) : 0.0;
+    document.getElementById('editor-sentiment').value = sentiment;
+    document.getElementById('editor-sentiment-val').textContent = isNaN(sentiment) ? '0.0' : sentiment.toFixed(1);
     
-    document.getElementById('editor-conviction').value = completedAgent.initial_conviction;
-    document.getElementById('editor-conviction-val').textContent = Math.round(completedAgent.initial_conviction * 100) + '%';
+    const conviction = (completedAgent.initial_conviction !== undefined && completedAgent.initial_conviction !== null) ? parseFloat(completedAgent.initial_conviction) : 0.5;
+    document.getElementById('editor-conviction').value = conviction;
+    document.getElementById('editor-conviction-val').textContent = isNaN(conviction) ? '50%' : Math.round(conviction * 100) + '%';
     
-    document.getElementById('editor-reactivity').value = completedAgent.reactivity_threshold;
-    document.getElementById('editor-reactivity-val').textContent = Math.round(completedAgent.reactivity_threshold * 100) + '%';
+    const reactivity = (completedAgent.reactivity_threshold !== undefined && completedAgent.reactivity_threshold !== null) ? parseFloat(completedAgent.reactivity_threshold) : 0.3;
+    document.getElementById('editor-reactivity').value = reactivity;
+    document.getElementById('editor-reactivity-val').textContent = isNaN(reactivity) ? '30%' : Math.round(reactivity * 100) + '%';
     
     sentimentManuallySet = true;
     convictionManuallySet = true;
     reactivityManuallySet = true;
 
     const agentKey = editingAgentKey || name;
-    activeAgents[agentKey] = completedAgent;
+    activeAgents[agentKey] = {
+      ...activeAgents[agentKey],
+      ...completedAgent,
+      initial_sentiment: sentiment,
+      initial_conviction: conviction,
+      reactivity_threshold: reactivity
+    };
   } catch (error) {
     console.error("AI Autofill Error:", error);
     alert("AI Autofill failed. Offline fallback applied.");
