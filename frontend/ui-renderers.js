@@ -15,9 +15,9 @@ function escapeHTML(str) {
 }
 
 function getSentimentColor(val) {
-  if (val > 0.15) return "var(--color-green)";
-  if (val < -0.15) return "var(--color-red)";
-  return "var(--text-muted)";
+  if (val > 0.15) return "#10b981";
+  if (val < -0.15) return "#ef4444";
+  return "#64748b";
 }
 
 function getSwarmTypeClass(swarmType) {
@@ -156,21 +156,26 @@ function renderAgentsList(personas) {
       <p class="agent-card-role">${escapeHTML(value.role_identity)}</p>
       
       <!-- Sidebar Dynamic Stats Indicators -->
-      <div class="agent-card-stats-wrapper" style="margin-top: 10px; display: flex; flex-direction: column; gap: 6px; border-top: 1px solid rgba(255,255,255,0.03); padding-top: 8px;">
+      <div class="agent-card-stats-wrapper" style="margin-top: 10px; display: flex; flex-direction: column; gap: 6px; border-top: 1px solid rgba(0,0,0,0.06); padding-top: 8px;">
         <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.72rem;">
-          <span style="color: var(--text-muted);">Sentiment:</span>
-          <strong class="sidebar-sentiment-val" style="color: ${getSentimentColor(initialSentiment)};">${initialSentiment.toFixed(2)}</strong>
+          <span style="color: var(--text-muted); font-weight: 600;">Sentiment:</span>
+          <strong class="sidebar-sentiment-val" style="color: ${getSentimentColor(initialSentiment)}; font-weight: 700;">${initialSentiment > 0 ? '+' : ''}${initialSentiment.toFixed(2)}</strong>
         </div>
-        <div style="height: 4px; background: rgba(255,255,255,0.05); border-radius: 2px; overflow: hidden;">
+        <div style="height: 6px; background: rgba(0,0,0,0.06); border-radius: 3px; overflow: hidden;">
           <div class="sidebar-sentiment-bar" style="width: ${sentimentPct}%; height: 100%; background: ${getSentimentColor(initialSentiment)}; transition: width 0.3s ease, background 0.3s ease;"></div>
         </div>
-        
-        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.72rem; margin-top: 2px;">
-          <span style="color: var(--text-muted);">Conviction:</span>
-          <strong class="sidebar-conviction-val" style="color: white;">${Math.round(convictionPct)}%</strong>
+        <div style="display: flex; justify-content: space-between; font-size: 0.62rem; color: var(--text-dark); margin-top: -3px;">
+          <span>-1.0 (Bear)</span>
+          <span>0.0 (Neutral)</span>
+          <span>+1.0 (Bull)</span>
         </div>
-        <div style="height: 4px; background: rgba(255,255,255,0.05); border-radius: 2px; overflow: hidden;">
-          <div class="sidebar-conviction-bar" style="width: ${convictionPct}%; height: 100%; background: var(--color-blue); transition: width 0.3s ease;"></div>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.72rem; margin-top: 4px;">
+          <span style="color: var(--text-muted); font-weight: 600;">Conviction:</span>
+          <strong class="sidebar-conviction-val" style="color: #1e293b; font-size: 0.78rem; font-weight: 700;">${Math.round(convictionPct)}%</strong>
+        </div>
+        <div style="height: 6px; background: rgba(0,0,0,0.06); border-radius: 3px; overflow: hidden;">
+          <div class="sidebar-conviction-bar" style="width: ${convictionPct}%; height: 100%; background: #3b82f6; transition: width 0.3s ease;"></div>
         </div>
       </div>
     `;
@@ -329,7 +334,14 @@ function updateLiveMonitorColumn(states, speakingAgentName) {
   });
 }
 
-function updateSidebarAgentsParameters(states) {
+let prevAgentStates = {};
+
+function updateSidebarAgentsParameters(states, activeSpeakerName = null) {
+  const listContainer = document.getElementById('agents-list');
+  if (!listContainer) return;
+
+  const cardDeltas = [];
+
   Object.entries(states).forEach(([name, state]) => {
     const cards = document.querySelectorAll('.agent-sidebar-card');
     let targetCard = null;
@@ -338,33 +350,74 @@ function updateSidebarAgentsParameters(states) {
         targetCard = card;
       }
     });
-    
+
     if (targetCard) {
+      // Calculate stance change delta
+      const prevState = prevAgentStates[name] || { sentiment: state.sentiment, conviction: state.conviction };
+      const delta = Math.abs(state.sentiment - prevState.sentiment) + Math.abs(state.conviction - prevState.conviction);
+
+      const isSpeaker = activeSpeakerName && name.toLowerCase() === activeSpeakerName.toLowerCase();
+      // Give speaker priority weight in sorting
+      const rankScore = isSpeaker ? 100 + delta : delta;
+
+      cardDeltas.push({ card: targetCard, score: rankScore, isSpeaker, delta });
+
       const sentValEl = targetCard.querySelector('.sidebar-sentiment-val');
       const sentBarEl = targetCard.querySelector('.sidebar-sentiment-bar');
       const convValEl = targetCard.querySelector('.sidebar-conviction-val');
       const convBarEl = targetCard.querySelector('.sidebar-conviction-bar');
-      
+
       if (sentValEl && sentBarEl) {
-        sentValEl.textContent = state.sentiment.toFixed(2);
+        sentValEl.textContent = (state.sentiment > 0 ? '+' : '') + state.sentiment.toFixed(2);
         sentValEl.style.color = getSentimentColor(state.sentiment);
-        
+
         const sentimentPct = ((state.sentiment + 1) / 2) * 100;
         sentBarEl.style.width = `${sentimentPct}%`;
         sentBarEl.style.background = getSentimentColor(state.sentiment);
       }
-      
+
       if (convValEl && convBarEl) {
         convValEl.textContent = `${Math.round(state.conviction * 100)}%`;
+        convValEl.style.color = '#1e293b';
         convBarEl.style.width = `${state.conviction * 100}%`;
       }
+    }
+  });
+
+  // Save current states for next turn delta calculation
+  prevAgentStates = JSON.parse(JSON.stringify(states));
+
+  // Sort cards descending by impact score
+  cardDeltas.sort((a, b) => b.score - a.score);
+
+  // Apply smooth sliding re-ordering to DOM
+  cardDeltas.forEach(({ card, isSpeaker, delta }) => {
+    listContainer.appendChild(card);
+    if (isSpeaker || delta > 0.05) {
+      card.classList.add('updated-top');
+      card.style.transition = 'all 0.5s cubic-bezier(0.2, 0.8, 0.2, 1)';
+      setTimeout(() => {
+        card.classList.remove('updated-top');
+      }, 1500);
     }
   });
 }
 
 function appendTurnToTimeline(turn) {
   const container = document.getElementById('debate-timeline-messages');
+  if (!container) return;
+
+  // Clear any loading spinner the moment the first real turn arrives
+  const existingLoader = container.querySelector('.sidebar-loader');
+  if (existingLoader) existingLoader.remove();
+
   const isMod = turn.speaker === "Moderator" || !personasData[turn.speaker];
+
+  // Dim all existing message bubbles in the timeline for spotlight focus
+  container.querySelectorAll('.debate-bubble').forEach(bubble => {
+    bubble.classList.remove('spotlight-active');
+    bubble.classList.add('spotlight-dimmed');
+  });
   
   let swarmType = "Moderator Guard";
   let swarmClass = "swarm-structural";
@@ -380,7 +433,7 @@ function appendTurnToTimeline(turn) {
   }
   
   const turnCard = document.createElement('div');
-  turnCard.className = 'debate-bubble';
+  turnCard.className = 'debate-bubble spotlight-active';
   turnCard.setAttribute('data-turn-number', turn.turn);
   
   let slidersHtml = '';
@@ -393,7 +446,7 @@ function appendTurnToTimeline(turn) {
         <div class="live-slider-item">
           <div class="slider-label-row">
             <span>Sentiment</span>
-            <strong style="color: ${getSentimentColor(turn.sentiment_after)};">${turn.sentiment_after.toFixed(2)}</strong>
+            <strong style="color: ${getSentimentColor(turn.sentiment_after)};">${turn.sentiment_after > 0 ? '+' : ''}${turn.sentiment_after.toFixed(2)}</strong>
           </div>
           <div class="slider-bar-track">
             <div class="slider-bar-fill fill-sentiment" style="width: ${sentimentVal}%; background: ${getSentimentColor(turn.sentiment_after)};"></div>
@@ -402,7 +455,7 @@ function appendTurnToTimeline(turn) {
         <div class="live-slider-item">
           <div class="slider-label-row">
             <span>Conviction</span>
-            <strong>${Math.round(convictionVal)}%</strong>
+            <strong style="color: #1e293b; font-weight: 700;">${Math.round(convictionVal)}%</strong>
           </div>
           <div class="slider-bar-track">
             <div class="slider-bar-fill fill-conviction" style="width: ${convictionVal}%;"></div>
@@ -413,49 +466,24 @@ function appendTurnToTimeline(turn) {
   }
   
   let monologueHtml = '';
-  if (turn.internal_monologue && turn.internal_monologue !== "Offline mock reaction.") {
+  if (turn.internal_monologue) {
     monologueHtml = `
-      <div class="inner-monologue-accordion">
-        <button class="monologue-trigger" onclick="toggleMonologue(this)">
-          <i class="fa-solid fa-brain"></i> Toggle Inner Thoughts
-        </button>
-        <div class="monologue-content hidden">
-          "${escapeHTML(turn.internal_monologue)}"
-        </div>
+      <button class="btn-toggle-monologue" onclick="toggleMonologue(this)">
+        <i class="fa-solid fa-brain"></i> Toggle Inner Thoughts
+      </button>
+      <div class="monologue-content hidden">
+        <p><em>${escapeHTML(turn.internal_monologue)}</em></p>
       </div>
     `;
   }
   
   let correctionHtml = '';
-  if (turn.factuality_score !== undefined) {
+  if (turn.factuality_score !== undefined && turn.factuality_score !== null) {
     const accuracyPercent = Math.round(turn.factuality_score * 100);
     const isValid = turn.is_factually_correct && turn.factuality_score >= 0.85;
     const alertClass = isValid ? 'valid' : 'invalid';
     const icon = isValid ? 'fa-circle-check' : 'fa-circle-exclamation';
     const title = isValid ? `Verified Stance (Accuracy: ${accuracyPercent}%)` : `Fact Check Warning (Accuracy: ${accuracyPercent}%)`;
-    
-    const messageText = isValid 
-      ? `The statements and logic presented align with the Ground Truth Company Profile.`
-      : (turn.moderator_note || "Significant factual or logical discrepancies were detected relative to the Company Profile.");
-    
-    correctionHtml = `
-      <div class="fact-check-alert ${alertClass}">
-        <i class="fa-solid ${icon}"></i>
-        <div>
-          <strong>${title}:</strong> ${escapeHTML(messageText)}
-          ${turn.cited_source ? `
-            <div class="fact-check-source" style="margin-top: 4px; font-size: 0.78rem; opacity: 0.95;">
-              <i class="fa-solid fa-file-contract"></i> Verification Source: <span onclick="openVerificationModal(${turn.turn})" style="font-weight: 600; text-decoration: underline; cursor: pointer; color: var(--color-lavender);" role="button" tabindex="0">${escapeHTML(turn.cited_source)}</span>
-            </div>
-          ` : ''}
-        </div>
-      </div>
-    `;
-  } else if (turn.moderator_note) {
-    const isValid = turn.is_factually_correct;
-    const alertClass = isValid ? 'valid' : 'invalid';
-    const icon = isValid ? 'fa-circle-check' : 'fa-circle-exclamation';
-    const title = isValid ? 'Statement Fact-Checked' : 'Fact Check Warning';
     
     correctionHtml = `
       <div class="fact-check-alert ${alertClass}">
@@ -464,14 +492,18 @@ function appendTurnToTimeline(turn) {
           <strong>${title}:</strong> ${escapeHTML(turn.moderator_note)}
           ${turn.cited_source ? `
             <div class="fact-check-source" style="margin-top: 4px; font-size: 0.78rem; opacity: 0.95;">
-              <i class="fa-solid fa-file-contract"></i> Verification Source: <span onclick="openVerificationModal(${turn.turn})" style="font-weight: 600; text-decoration: underline; cursor: pointer; color: var(--color-lavender);" role="button" tabindex="0">${escapeHTML(turn.cited_source)}</span>
+              <i class="fa-solid fa-file-contract"></i> Verification Source: 
+              <a href="${turn.source_url || 'https://www.ril.com/investors/financial-reporting'}" target="_blank" rel="noopener noreferrer" style="font-weight: 600; text-decoration: underline; color: var(--color-lavender); cursor: pointer;" title="Open Official Document in New Tab">
+                ${escapeHTML(turn.cited_source)} <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 0.72rem; margin-left: 3px;"></i>
+              </a>
+              <span onclick="event.stopPropagation(); openVerificationModal('${turn.turn}')" style="margin-left: 8px; font-size: 0.73rem; opacity: 0.85; text-decoration: underline; cursor: pointer; color: var(--text-main);" role="button" title="View Full Verification Breakdown">[View Breakdown]</span>
             </div>
           ` : ''}
         </div>
       </div>
     `;
   }
-  
+
   turnCard.innerHTML = `
     <div class="bubble-avatar ${escapeHTML(avatarClass)}">${escapeHTML(initialName)}</div>
     <div class="bubble-body">
@@ -493,7 +525,14 @@ function appendTurnToTimeline(turn) {
   `;
   
   container.appendChild(turnCard);
-  container.scrollTop = container.scrollHeight;
+
+  // Use scrollIntoView on the card itself — works regardless of which ancestor is the scroll container
+  setTimeout(() => {
+    turnCard.scrollIntoView({ behavior: 'instant', block: 'end' });
+  }, 50);
+  setTimeout(() => {
+    turnCard.scrollIntoView({ behavior: 'instant', block: 'end' });
+  }, 450);
 }
 
 function updateTurnFactCheckInDOM(turn) {
@@ -522,7 +561,11 @@ function updateTurnFactCheckInDOM(turn) {
           <strong>${title}:</strong> ${escapeHTML(messageText)}
           ${turn.cited_source ? `
             <div class="fact-check-source" style="margin-top: 4px; font-size: 0.78rem; opacity: 0.95;">
-              <i class="fa-solid fa-file-contract"></i> Verification Source: <span onclick="openVerificationModal(${turn.turn})" style="font-weight: 600; text-decoration: underline; cursor: pointer; color: var(--color-lavender);" role="button" tabindex="0">${escapeHTML(turn.cited_source)}</span>
+              <i class="fa-solid fa-file-contract"></i> Verification Source: 
+              <a href="${turn.source_url || 'https://www.ril.com/investors/financial-reporting'}" target="_blank" rel="noopener noreferrer" style="font-weight: 600; text-decoration: underline; color: var(--color-lavender); cursor: pointer;" title="Open Official Document in New Tab">
+                ${escapeHTML(turn.cited_source)} <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 0.72rem; margin-left: 3px;"></i>
+              </a>
+              <span onclick="event.stopPropagation(); openVerificationModal('${turn.turn}')" style="margin-left: 8px; font-size: 0.73rem; opacity: 0.85; text-decoration: underline; cursor: pointer; color: var(--text-main);" role="button" title="View Full Verification Breakdown">[View Breakdown]</span>
             </div>
           ` : ''}
         </div>
@@ -536,6 +579,8 @@ function updateTurnFactCheckInDOM(turn) {
       const tempDiv = document.createElement('div');
       tempDiv.innerHTML = correctionHtml;
       body.appendChild(tempDiv.firstElementChild);
+
+      card.scrollIntoView({ behavior: 'instant', block: 'end' });
     }
   }
 }
@@ -569,10 +614,16 @@ function renderConfigAgentsTable() {
 
 function renderAgentEndStates() {
   const container = document.getElementById('agent-consensus-endstate');
+  if (!container) return;
   container.innerHTML = '';
   
-  const stateHistory = simulationResult.state_tracking;
-  const finalTurnState = stateHistory[stateHistory.length - 1].states;
+  if (!simulationResult || !simulationResult.state_tracking || simulationResult.state_tracking.length === 0) {
+    return;
+  }
+  
+  const lastStateObj = simulationResult.state_tracking[simulationResult.state_tracking.length - 1];
+  if (!lastStateObj || !lastStateObj.states) return;
+  const finalTurnState = lastStateObj.states;
   
   Object.entries(finalTurnState).forEach(([name, state]) => {
     const persona = personasData[name] || { swarm_type: "Retail & Consumer Swarm" };

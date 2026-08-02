@@ -1,0 +1,802 @@
+[
+  {
+    "id": 1,
+    "category": "Fundamental Traps",
+    "headline": "Q3 gross revenue surged 210% year-over-year, but footnote 4 reveals operating cash flow is negative $420M due to heavily uncollectible accounts receivable.",
+    "expected_bullish": ["Brand Loyalist / Fanboy"],
+    "expected_bearish": ["Institutional Value Investor", "Aggressive Short-Seller", "Dividend Growth Investor", "B2B Supply Chain Partner / Vanguard"],
+    "expected_neutral": ["Algorithmic Quantitative Trader", "Macro Economist", "Regulatory Compliance Watchdog"]
+  },
+  {
+    "id": 2,
+    "category": "Fundamental Traps",
+    "headline": "The board announced a record $2B share buyback program, entirely funded by issuing high-yield, variable-rate unsecured debt.",
+    "expected_bullish": ["Brand Loyalist / Fanboy", "Technical Day Trader"],
+    "expected_bearish": ["Institutional Value Investor", "Aggressive Short-Seller", "Dividend Growth Investor"],
+    "expected_neutral": ["Regulatory Compliance Watchdog"]
+  },
+  {
+    "id": 3,
+    "category": "Fundamental Traps",
+    "headline": "Earnings per share (EPS) beat estimates by $0.15, achieved exclusively by liquidating a core patent portfolio rather than operational sales.",
+    "expected_bullish": ["Panic-Prone Retail Trader"],
+    "expected_bearish": ["Institutional Value Investor", "Aggressive Short-Seller", "Industry Tech Expert"],
+    "expected_neutral": ["Regulatory Compliance Watchdog"]
+  },
+  {
+    "id": 4,
+    "category": "Fundamental Traps",
+    "headline": "The company declared a special dividend yield of 8%, while simultaneously reporting a payout ratio of 145% of free cash flow.",
+    "expected_bullish": ["Panic-Prone Retail Trader"],
+    "expected_bearish": ["Dividend Growth Investor", "Institutional Value Investor", "Aggressive Short-Seller"],
+    "expected_neutral": ["Technical Day Trader"]
+  },
+  {
+    "id": 5,
+    "category": "Fundamental Traps",
+    "headline": "Top-line sales grew 40% in emerging markets, but days sales outstanding (DSO) increased from 45 days to 112 days, signaling channel stuffing.",
+    "expected_bullish": ["Brand Loyalist / Fanboy"],
+    "expected_bearish": ["Institutional Value Investor", "Aggressive Short-Seller", "B2B Supply Chain Partner / Vanguard"],
+    "expected_neutral": ["Macro Economist"]
+  },
+  {
+    "id": 6,
+    "category": "Fundamental Traps",
+    "headline": "Management boasts a 50% increase in EBITDA, completely omitting that capitalized software development costs were aggressively reclassified to hide R&D bloat.",
+    "expected_bullish": ["Brand Loyalist / Fanboy"],
+    "expected_bearish": ["Aggressive Short-Seller", "Institutional Value Investor", "Industry Tech Expert"],
+    "expected_neutral": ["Technical Day Trader"]
+  },
+  {
+    "id": 7,
+    "category": "Fundamental Traps",
+    "headline": "Retail investors cheer a 5-for-1 stock split, ignoring the simultaneous 10-K filing showing a breach of standard debt covenants.",
+    "expected_bullish": ["Brand Loyalist / Fanboy", "Panic-Prone Retail Trader"],
+    "expected_bearish": ["Regulatory Compliance Watchdog", "Aggressive Short-Seller", "Institutional Value Investor"],
+    "expected_neutral": ["Industry Tech Expert"]
+  },
+  {
+    "id": 8,
+    "category": "Fundamental Traps",
+    "headline": "Customer acquisition doubled this quarter; however, customer acquisition cost (CAC) now exceeds the lifetime value (LTV) by a margin of 3 to 1.",
+    "expected_bullish": ["Brand Loyalist / Fanboy"],
+    "expected_bearish": ["Institutional Value Investor", "Brand Skeptic", "Aggressive Short-Seller"],
+    "expected_neutral": ["Macro Economist"]
+  },
+  {
+    "id": 9,
+    "category": "Fundamental Traps",
+    "headline": "The company announced a 'record profitable quarter,' but a deep dive into the cash flow statement shows they simply stopped paying tier-1 suppliers.",
+    "expected_bullish": ["Panic-Prone Retail Trader"],
+    "expected_bearish": ["B2B Supply Chain Partner / Vanguard", "Aggressive Short-Seller", "Institutional Value Investor"],
+    "expected_neutral": ["Industry Tech Expert"]
+  },
+  {
+    "id": 10,
+    "category": "Fundamental Traps",
+    "headline": "Gross margins expanded by 400 basis points, solely because the firm halted all routine maintenance on their primary manufacturing facilities.",
+    "expected_bullish": ["Brand Loyalist / Fanboy"],
+    "expected_bearish": ["Company Insider / Employee", "Industry Tech Expert", "Aggressive Short-Seller"],
+    "expected_neutral": ["Macro Economist"]
+  },
+  {
+    "id": 11,
+    "category": "Fundamental Traps",
+    "headline": "Subscriptions grew by 1 million users, driven entirely by a 'first year free' promotion with zero recurring revenue guarantees.",
+    "expected_bullish": ["Brand Loyalist / Fanboy", "Panic-Prone Retail Trader"],
+    "expected_bearish": ["Institutional Value Investor", "Brand Skeptic", "Aggressive Short-Seller"],
+    "expected_neutral": ["ESG Specialist"]
+  },
+  {
+    "id": 12,
+    "category": "Fundamental Traps",
+    "headline": "The CEO announced year-over-year profit growth of 12%, though net debt ballooned by 400% to acquire a failing competitor.",
+    "expected_bullish": ["Brand Loyalist / Fanboy"],
+    "expected_bearish": ["Institutional Value Investor", "Aggressive Short-Seller", "Dividend Growth Investor"],
+    "expected_neutral": ["Technical Day Trader"]
+  },
+  {
+    "id": 13,
+    "category": "Fundamental Traps",
+    "headline": "Operating income reached an all-time high of $50M, while deferred revenue liabilities surged to $300M with no clear delivery timeline.",
+    "expected_bullish": ["Panic-Prone Retail Trader"],
+    "expected_bearish": ["Institutional Value Investor", "Aggressive Short-Seller", "Company Insider / Employee"],
+    "expected_neutral": ["Macro Economist"]
+  },
+  {
+    "id": 14,
+    "category": "Fundamental Traps",
+    "headline": "The company proudly reported hitting its EPS target, achieved by slashing the entire internal compliance and quality assurance budget.",
+    "expected_bullish": ["Brand Loyalist / Fanboy"],
+    "expected_bearish": ["Regulatory Compliance Watchdog", "ESG Specialist", "Industry Tech Expert", "Aggressive Short-Seller"],
+    "expected_neutral": ["Technical Day Trader"]
+  },
+  {
+    "id": 15,
+    "category": "Fundamental Traps",
+    "headline": "A massive PR campaign highlights $1B in new contracted revenue, but the contracts allow clients to terminate at will with zero penalty.",
+    "expected_bullish": ["Brand Loyalist / Fanboy", "Panic-Prone Retail Trader"],
+    "expected_bearish": ["Brand Skeptic", "Institutional Value Investor", "Aggressive Short-Seller"],
+    "expected_neutral": ["Macro Economist"]
+  },
+  {
+    "id": 16,
+    "category": "Fundamental Traps",
+    "headline": "Net income soared 50%, largely due to a one-time, non-recurring tax credit that will expire at the end of the current fiscal year.",
+    "expected_bullish": ["Panic-Prone Retail Trader"],
+    "expected_bearish": ["Institutional Value Investor", "Aggressive Short-Seller", "Dividend Growth Investor"],
+    "expected_neutral": ["Industry Tech Expert"]
+  },
+  {
+    "id": 17,
+    "category": "Fundamental Traps",
+    "headline": "The firm expanded its physical retail footprint by 30%, while same-store sales simultaneously contracted by 18%.",
+    "expected_bullish": ["Brand Loyalist / Fanboy"],
+    "expected_bearish": ["Institutional Value Investor", "Brand Skeptic", "Aggressive Short-Seller"],
+    "expected_neutral": ["Regulatory Compliance Watchdog"]
+  },
+  {
+    "id": 18,
+    "category": "Fundamental Traps",
+    "headline": "Management raised full-year guidance by 20% on the same day the CFO and Chief Accounting Officer abruptly resigned without explanation.",
+    "expected_bullish": ["Brand Loyalist / Fanboy"],
+    "expected_bearish": ["Regulatory Compliance Watchdog", "Aggressive Short-Seller", "Institutional Value Investor"],
+    "expected_neutral": ["Technical Day Trader"]
+  },
+  {
+    "id": 19,
+    "category": "Fundamental Traps",
+    "headline": "The company celebrated a 10% dividend hike, masking the fact they drew down their entire emergency revolving credit facility to pay it.",
+    "expected_bullish": ["Panic-Prone Retail Trader"],
+    "expected_bearish": ["Dividend Growth Investor", "Institutional Value Investor", "Aggressive Short-Seller"],
+    "expected_neutral": ["Industry Tech Expert"]
+  },
+  {
+    "id": 20,
+    "category": "Fundamental Traps",
+    "headline": "Record-breaking unit sales were reported this quarter, masking a 35% contraction in operating margins due to severe price-slashing.",
+    "expected_bullish": ["Brand Loyalist / Fanboy"],
+    "expected_bearish": ["Institutional Value Investor", "Aggressive Short-Seller", "Brand Skeptic"],
+    "expected_neutral": ["Macro Economist"]
+  },
+  {
+    "id": 21,
+    "category": "Hype vs. Reality Tests",
+    "headline": "The CEO's tweet about a 'revolutionary AI integration' gained 4 million likes, but independent engineering teardowns show the hardware overheats and fails 60% of the time.",
+    "expected_bullish": ["Brand Loyalist / Fanboy"],
+    "expected_bearish": ["Industry Tech Expert", "Brand Skeptic", "Company Insider / Employee"],
+    "expected_neutral": ["Macro Economist"]
+  },
+  {
+    "id": 22,
+    "category": "Hype vs. Reality Tests",
+    "headline": "Social media influencers are hyping a newly announced electric vehicle, though the company's primary lithium supplier just canceled their contract due to unpaid invoices.",
+    "expected_bullish": ["Brand Loyalist / Fanboy", "Panic-Prone Retail Trader"],
+    "expected_bearish": ["B2B Supply Chain Partner / Vanguard", "Aggressive Short-Seller", "Brand Skeptic"],
+    "expected_neutral": ["Technical Day Trader"]
+  },
+  {
+    "id": 23,
+    "category": "Hype vs. Reality Tests",
+    "headline": "A highly anticipated video game broke pre-order records, but internal leaks reveal severe execution friction and an unfinished core engine architecture.",
+    "expected_bullish": ["Brand Loyalist / Fanboy"],
+    "expected_bearish": ["Company Insider / Employee", "Industry Tech Expert", "Brand Skeptic"],
+    "expected_neutral": ["Macro Economist"]
+  },
+  {
+    "id": 24,
+    "category": "Hype vs. Reality Tests",
+    "headline": "The brand's new flagship smartphone is trending globally; meanwhile, manufacturing yield criteria at the primary foundry dropped to an abysmal 30%.",
+    "expected_bullish": ["Brand Loyalist / Fanboy"],
+    "expected_bearish": ["Industry Tech Expert", "B2B Supply Chain Partner / Vanguard", "Brand Skeptic"],
+    "expected_neutral": ["Dividend Growth Investor"]
+  },
+  {
+    "id": 25,
+    "category": "Hype vs. Reality Tests",
+    "headline": "A celebrity endorsement caused the stock to gap up 15%, masking the fact that total inventory turnover has ground to a complete halt.",
+    "expected_bullish": ["Brand Loyalist / Fanboy", "Technical Day Trader", "Panic-Prone Retail Trader"],
+    "expected_bearish": ["B2B Supply Chain Partner / Vanguard", "Institutional Value Investor", "Aggressive Short-Seller"],
+    "expected_neutral": ["Regulatory Compliance Watchdog"]
+  },
+  {
+    "id": 26,
+    "category": "Hype vs. Reality Tests",
+    "headline": "The marketing team announced a 'metaverse transition,' while the core engineering team reports a 40% reduction in server bandwidth capacity.",
+    "expected_bullish": ["Brand Loyalist / Fanboy"],
+    "expected_bearish": ["Industry Tech Expert", "Company Insider / Employee", "Brand Skeptic"],
+    "expected_neutral": ["Macro Economist"]
+  },
+  {
+    "id": 27,
+    "category": "Hype vs. Reality Tests",
+    "headline": "Reddit forums are orchestrating a massive buy campaign, completely ignoring that the company has not shipped a physical product in 14 months.",
+    "expected_bullish": ["Brand Loyalist / Fanboy", "Panic-Prone Retail Trader", "Technical Day Trader"],
+    "expected_bearish": ["Brand Skeptic", "B2B Supply Chain Partner / Vanguard", "Institutional Value Investor"],
+    "expected_neutral": ["ESG Specialist"]
+  },
+  {
+    "id": 28,
+    "category": "Hype vs. Reality Tests",
+    "headline": "A viral TikTok campaign drove a 500% spike in website traffic, but backend logistics show a 90-day supply chain backlog for actual deliveries.",
+    "expected_bullish": ["Brand Loyalist / Fanboy", "Panic-Prone Retail Trader"],
+    "expected_bearish": ["B2B Supply Chain Partner / Vanguard", "Company Insider / Employee", "Brand Skeptic"],
+    "expected_neutral": ["Regulatory Compliance Watchdog"]
+  },
+  {
+    "id": 29,
+    "category": "Hype vs. Reality Tests",
+    "headline": "The company rebranded with a sleek new logo and mission statement, while laying off 30% of its R&D and production tooling staff.",
+    "expected_bullish": ["Brand Loyalist / Fanboy"],
+    "expected_bearish": ["Industry Tech Expert", "Company Insider / Employee", "Brand Skeptic"],
+    "expected_neutral": ["Macro Economist"]
+  },
+  {
+    "id": 30,
+    "category": "Hype vs. Reality Tests",
+    "headline": "Pre-release hype for the new software update is deafening, yet beta testers report catastrophic data-loss bugs that the company refuses to acknowledge.",
+    "expected_bullish": ["Brand Loyalist / Fanboy"],
+    "expected_bearish": ["Industry Tech Expert", "Regulatory Compliance Watchdog", "Brand Skeptic"],
+    "expected_neutral": ["Dividend Growth Investor"]
+  },
+  {
+    "id": 31,
+    "category": "Hype vs. Reality Tests",
+    "headline": "The CEO went on a popular podcast claiming they solved autonomous driving, while patent filings show zero new architectural advancements in three years.",
+    "expected_bullish": ["Brand Loyalist / Fanboy"],
+    "expected_bearish": ["Industry Tech Expert", "Brand Skeptic", "Regulatory Compliance Watchdog"],
+    "expected_neutral": ["Macro Economist"]
+  },
+  {
+    "id": 32,
+    "category": "Hype vs. Reality Tests",
+    "headline": "Fans are camping outside stores for the new hardware release, though internal memos show the device relies on outdated, heavily bottlenecked processors.",
+    "expected_bullish": ["Brand Loyalist / Fanboy"],
+    "expected_bearish": ["Industry Tech Expert", "Company Insider / Employee", "Brand Skeptic"],
+    "expected_neutral": ["ESG Specialist"]
+  },
+  {
+    "id": 33,
+    "category": "Hype vs. Reality Tests",
+    "headline": "A massive PR blitz promises 100% renewable energy by next year, while current Scope 1 carbon emissions actually increased by 25%.",
+    "expected_bullish": ["Brand Loyalist / Fanboy"],
+    "expected_bearish": ["ESG Specialist", "Brand Skeptic", "Regulatory Compliance Watchdog"],
+    "expected_neutral": ["Technical Day Trader"]
+  },
+  {
+    "id": 34,
+    "category": "Hype vs. Reality Tests",
+    "headline": "The stock is surging on rumors of an Apple buyout, despite the fact that their core technology is fundamentally incompatible with iOS architecture.",
+    "expected_bullish": ["Panic-Prone Retail Trader", "Technical Day Trader", "Brand Loyalist / Fanboy"],
+    "expected_bearish": ["Industry Tech Expert", "Brand Skeptic", "Institutional Value Investor"],
+    "expected_neutral": ["ESG Specialist"]
+  },
+  {
+    "id": 35,
+    "category": "Hype vs. Reality Tests",
+    "headline": "A flashy keynote presentation promised a holographic display module; however, physical supply chain partners report zero purchase orders for the required components.",
+    "expected_bullish": ["Brand Loyalist / Fanboy"],
+    "expected_bearish": ["B2B Supply Chain Partner / Vanguard", "Industry Tech Expert", "Brand Skeptic"],
+    "expected_neutral": ["Macro Economist"]
+  },
+  {
+    "id": 36,
+    "category": "Hype vs. Reality Tests",
+    "headline": "The company won a 'Brand of the Year' award from a major magazine, while actual customer churn rate quietly hit an all-time high of 42%.",
+    "expected_bullish": ["Brand Loyalist / Fanboy"],
+    "expected_bearish": ["Brand Skeptic", "Institutional Value Investor", "Aggressive Short-Seller"],
+    "expected_neutral": ["Technical Day Trader"]
+  },
+  {
+    "id": 37,
+    "category": "Hype vs. Reality Tests",
+    "headline": "A prominent hedge fund manager praised the company's 'vision' on television, completely ignoring the 80% defect rate in their latest manufacturing batch.",
+    "expected_bullish": ["Panic-Prone Retail Trader", "Brand Loyalist / Fanboy"],
+    "expected_bearish": ["Industry Tech Expert", "Company Insider / Employee", "Brand Skeptic"],
+    "expected_neutral": ["Macro Economist"]
+  },
+  {
+    "id": 38,
+    "category": "Hype vs. Reality Tests",
+    "headline": "The marketing department spent $50M on a Super Bowl ad, while the engineering team struggles to secure basic raw materials for metal forming.",
+    "expected_bullish": ["Brand Loyalist / Fanboy"],
+    "expected_bearish": ["B2B Supply Chain Partner / Vanguard", "Industry Tech Expert", "Company Insider / Employee"],
+    "expected_neutral": ["Technical Day Trader"]
+  },
+  {
+    "id": 39,
+    "category": "Hype vs. Reality Tests",
+    "headline": "Fanboys are aggressively defending the company on Twitter, dismissing a severe structural flaw in the flagship product's chassis as 'fake news.'",
+    "expected_bullish": ["Brand Loyalist / Fanboy"],
+    "expected_bearish": ["Brand Skeptic", "Industry Tech Expert", "Regulatory Compliance Watchdog"],
+    "expected_neutral": ["Macro Economist"]
+  },
+  {
+    "id": 40,
+    "category": "Hype vs. Reality Tests",
+    "headline": "The firm announced a partnership with a major AI startup, but technical documentation reveals it is just an API wrapper with zero proprietary innovation.",
+    "expected_bullish": ["Brand Loyalist / Fanboy", "Panic-Prone Retail Trader"],
+    "expected_bearish": ["Industry Tech Expert", "Brand Skeptic", "Institutional Value Investor"],
+    "expected_neutral": ["ESG Specialist"]
+  },
+  {
+    "id": 41,
+    "category": "Macro Shocks",
+    "headline": "The company reported a flawless quarter with record profits, but the Federal Reserve simultaneously announced an emergency 75bps rate hike and warned of stagflation.",
+    "expected_bullish": ["Brand Loyalist / Fanboy"],
+    "expected_bearish": ["Macro Economist", "Institutional Value Investor", "Aggressive Short-Seller"],
+    "expected_neutral": ["Industry Tech Expert"]
+  },
+  {
+    "id": 42,
+    "category": "Macro Shocks",
+    "headline": "Strong localized consumer spending drove a 10% revenue beat; however, a sudden embargo on semiconductor exports threatens the entire sector's supply chain.",
+    "expected_bullish": ["Brand Loyalist / Fanboy"],
+    "expected_bearish": ["Macro Economist", "B2B Supply Chain Partner / Vanguard", "Industry Tech Expert"],
+    "expected_neutral": ["Dividend Growth Investor"]
+  },
+  {
+    "id": 43,
+    "category": "Macro Shocks",
+    "headline": "The firm successfully expanded its operating margins, just as the latest CPI print came in at 8.5%, indicating sticky, systemic inflation.",
+    "expected_bullish": ["Institutional Value Investor"],
+    "expected_bearish": ["Macro Economist", "Aggressive Short-Seller"],
+    "expected_neutral": ["Company Insider / Employee"]
+  },
+  {
+    "id": 44,
+    "category": "Macro Shocks",
+    "headline": "A successful product launch in Europe is overshadowed by the ECB aggressively tightening liquidity and the Euro collapsing against the dollar.",
+    "expected_bullish": ["Brand Loyalist / Fanboy"],
+    "expected_bearish": ["Macro Economist", "Institutional Value Investor"],
+    "expected_neutral": ["Industry Tech Expert"]
+  },
+  {
+    "id": 45,
+    "category": "Macro Shocks",
+    "headline": "The company announced a promising new pipeline of commercial real estate projects, on the exact day that commercial mortgage-backed securities (CMBS) yields inverted violently.",
+    "expected_bullish": ["Brand Loyalist / Fanboy"],
+    "expected_bearish": ["Macro Economist", "Institutional Value Investor", "Aggressive Short-Seller"],
+    "expected_neutral": ["ESG Specialist"]
+  },
+  {
+    "id": 46,
+    "category": "Macro Shocks",
+    "headline": "Micro-level execution is flawless with zero operational friction, but global trade deficits have triggered severe cross-border tariffs on their core raw materials.",
+    "expected_bullish": ["Company Insider / Employee"],
+    "expected_bearish": ["Macro Economist", "B2B Supply Chain Partner / Vanguard", "Institutional Value Investor"],
+    "expected_neutral": ["Technical Day Trader"]
+  },
+  {
+    "id": 47,
+    "category": "Macro Shocks",
+    "headline": "Management raised their domestic revenue forecast, completely ignoring that the Bank of Japan just ended yield curve control, shocking global bond markets.",
+    "expected_bullish": ["Brand Loyalist / Fanboy"],
+    "expected_bearish": ["Macro Economist", "Institutional Value Investor"],
+    "expected_neutral": ["Regulatory Compliance Watchdog"]
+  },
+  {
+    "id": 48,
+    "category": "Macro Shocks",
+    "headline": "The firm secured a major low-interest loan, but sweeping macroeconomic data shows a deep contraction in GDP multipliers across their entire consumer base.",
+    "expected_bullish": ["Panic-Prone Retail Trader"],
+    "expected_bearish": ["Macro Economist", "Institutional Value Investor"],
+    "expected_neutral": ["Industry Tech Expert"]
+  },
+  {
+    "id": 49,
+    "category": "Macro Shocks",
+    "headline": "The company's P/E ratio looks attractive historically, but a sudden sovereign debt crisis in their primary emerging market threatens to wipe out 40% of their revenue.",
+    "expected_bullish": ["Brand Loyalist / Fanboy"],
+    "expected_bearish": ["Macro Economist", "Institutional Value Investor", "Aggressive Short-Seller"],
+    "expected_neutral": ["Technical Day Trader"]
+  },
+  {
+    "id": 50,
+    "category": "Macro Shocks",
+    "headline": "A stellar earnings report is released precisely as the Producer Price Index (PPI) spikes 12%, guaranteeing severe raw material margin compression next quarter.",
+    "expected_bullish": ["Brand Loyalist / Fanboy"],
+    "expected_bearish": ["Macro Economist", "B2B Supply Chain Partner / Vanguard", "Institutional Value Investor"],
+    "expected_neutral": ["Regulatory Compliance Watchdog"]
+  },
+  {
+    "id": 51,
+    "category": "Macro Shocks",
+    "headline": "The board authorized a new dividend policy, ignoring that the central bank just mandated a drastic increase in capital reserve requirements for all financial partners.",
+    "expected_bullish": ["Panic-Prone Retail Trader"],
+    "expected_bearish": ["Macro Economist", "Dividend Growth Investor", "Institutional Value Investor"],
+    "expected_neutral": ["Industry Tech Expert"]
+  },
+  {
+    "id": 52,
+    "category": "Macro Shocks",
+    "headline": "Company insiders are buying the stock, while macro indicators show consumer credit card defaults hitting a 15-year high nationwide.",
+    "expected_bullish": ["Company Insider / Employee", "Brand Loyalist / Fanboy"],
+    "expected_bearish": ["Macro Economist", "Institutional Value Investor", "Aggressive Short-Seller"],
+    "expected_neutral": ["ESG Specialist"]
+  },
+  {
+    "id": 53,
+    "category": "Macro Shocks",
+    "headline": "The firm reported strong domestic growth, but the global shipping index (Baltic Dry) collapsed 60%, indicating a severe global industrial slowdown.",
+    "expected_bullish": ["Brand Loyalist / Fanboy"],
+    "expected_bearish": ["Macro Economist", "B2B Supply Chain Partner / Vanguard"],
+    "expected_neutral": ["Regulatory Compliance Watchdog"]
+  },
+  {
+    "id": 54,
+    "category": "Macro Shocks",
+    "headline": "Management is confident in their pricing power, yet a sudden, unprecedented surge in global energy prices threatens to obliterate consumer discretionary spending.",
+    "expected_bullish": ["Brand Loyalist / Fanboy"],
+    "expected_bearish": ["Macro Economist", "Institutional Value Investor", "Aggressive Short-Seller"],
+    "expected_neutral": ["Industry Tech Expert"]
+  },
+  {
+    "id": 55,
+    "category": "Macro Shocks",
+    "headline": "The company's technical chart looks incredibly bullish, but the yield curve just reached its deepest inversion since 1981.",
+    "expected_bullish": ["Technical Day Trader", "Brand Loyalist / Fanboy"],
+    "expected_bearish": ["Macro Economist", "Institutional Value Investor"],
+    "expected_neutral": ["Company Insider / Employee"]
+  },
+  {
+    "id": 56,
+    "category": "Macro Shocks",
+    "headline": "A highly successful corporate restructuring is completed just as sweeping new federal tax legislation is passed, effectively eliminating their primary tax shield.",
+    "expected_bullish": ["Company Insider / Employee"],
+    "expected_bearish": ["Macro Economist", "Institutional Value Investor", "Regulatory Compliance Watchdog"],
+    "expected_neutral": ["Technical Day Trader"]
+  },
+  {
+    "id": 57,
+    "category": "Macro Shocks",
+    "headline": "The firm expanded its workforce by 10%, while national payroll data shows a systemic contraction and rising structural unemployment.",
+    "expected_bullish": ["Company Insider / Employee"],
+    "expected_bearish": ["Macro Economist", "Institutional Value Investor"],
+    "expected_neutral": ["Regulatory Compliance Watchdog"]
+  },
+  {
+    "id": 58,
+    "category": "Macro Shocks",
+    "headline": "Record sales of heavy machinery were reported, but the global Purchasing Managers' Index (PMI) just dropped below 45, indicating a deep manufacturing recession.",
+    "expected_bullish": ["Brand Loyalist / Fanboy"],
+    "expected_bearish": ["Macro Economist", "B2B Supply Chain Partner / Vanguard", "Institutional Value Investor"],
+    "expected_neutral": ["ESG Specialist"]
+  },
+  {
+    "id": 59,
+    "category": "Macro Shocks",
+    "headline": "The company's software subscriptions hold steady, despite a sudden, massive liquidity crisis freezing the overnight repo markets.",
+    "expected_bullish": ["Brand Loyalist / Fanboy"],
+    "expected_bearish": ["Macro Economist", "Institutional Value Investor", "Aggressive Short-Seller"],
+    "expected_neutral": ["Industry Tech Expert"]
+  },
+  {
+    "id": 60,
+    "category": "Macro Shocks",
+    "headline": "Management touted their resilient supply chain, right as a major geopolitical conflict effectively shut down the primary shipping strait for their raw materials.",
+    "expected_bullish": ["Brand Loyalist / Fanboy"],
+    "expected_bearish": ["Macro Economist", "B2B Supply Chain Partner / Vanguard", "Aggressive Short-Seller"],
+    "expected_neutral": ["Regulatory Compliance Watchdog"]
+  },
+  {
+    "id": 61,
+    "category": "Technical vs. Legal Conflicts",
+    "headline": "The stock just broke out above its 200-day moving average on massive volume; buried on page 84 of the 10-K is an active DOJ antitrust investigation.",
+    "expected_bullish": ["Technical Day Trader", "Brand Loyalist / Fanboy"],
+    "expected_bearish": ["Regulatory Compliance Watchdog", "Aggressive Short-Seller", "Institutional Value Investor"],
+    "expected_neutral": ["Industry Tech Expert"]
+  },
+  {
+    "id": 62,
+    "category": "Technical vs. Legal Conflicts",
+    "headline": "A perfect 'cup and handle' technical formation just triggered a buy signal, while the EPA simultaneously issued a $500M fine for hazardous waste dumping.",
+    "expected_bullish": ["Technical Day Trader"],
+    "expected_bearish": ["ESG Specialist", "Regulatory Compliance Watchdog", "Institutional Value Investor"],
+    "expected_neutral": ["Macro Economist"]
+  },
+  {
+    "id": 63,
+    "category": "Technical vs. Legal Conflicts",
+    "headline": "RSI indicates the stock is extremely oversold and primed for a bounce, but a whistleblower just leaked documents proving systemic accounting fraud.",
+    "expected_bullish": ["Technical Day Trader"],
+    "expected_bearish": ["Regulatory Compliance Watchdog", "Aggressive Short-Seller", "Institutional Value Investor"],
+    "expected_neutral": ["Industry Tech Expert"]
+  },
+  {
+    "id": 64,
+    "category": "Technical vs. Legal Conflicts",
+    "headline": "The MACD just experienced a bullish crossover, masking the fact that the company's labor union just authorized an indefinite strike over human rights violations.",
+    "expected_bullish": ["Technical Day Trader"],
+    "expected_bearish": ["ESG Specialist", "Company Insider / Employee", "Regulatory Compliance Watchdog"],
+    "expected_neutral": ["Macro Economist"]
+  },
+  {
+    "id": 65,
+    "category": "Technical vs. Legal Conflicts",
+    "headline": "Short-term momentum is accelerating wildly, completely ignoring the SEC officially halting trading on their primary subsidiary due to unregistered securities.",
+    "expected_bullish": ["Technical Day Trader", "Panic-Prone Retail Trader"],
+    "expected_bearish": ["Regulatory Compliance Watchdog", "Aggressive Short-Seller"],
+    "expected_neutral": ["Industry Tech Expert"]
+  },
+  {
+    "id": 66,
+    "category": "Technical vs. Legal Conflicts",
+    "headline": "The price action formed a massive double-bottom support level; however, the board of directors is currently being sued by shareholders for gross fiduciary negligence.",
+    "expected_bullish": ["Technical Day Trader"],
+    "expected_bearish": ["Regulatory Compliance Watchdog", "Institutional Value Investor", "ESG Specialist"],
+    "expected_neutral": ["Macro Economist"]
+  },
+  {
+    "id": 67,
+    "category": "Technical vs. Legal Conflicts",
+    "headline": "Options flow shows massive call buying indicating a short squeeze, despite the fact that their flagship product was just banned in the EU for privacy violations.",
+    "expected_bullish": ["Technical Day Trader", "Panic-Prone Retail Trader"],
+    "expected_bearish": ["Regulatory Compliance Watchdog", "ESG Specialist", "Brand Skeptic"],
+    "expected_neutral": ["Dividend Growth Investor"]
+  },
+  {
+    "id": 68,
+    "category": "Technical vs. Legal Conflicts",
+    "headline": "The stock is riding the upper Bollinger Band, while the FTC just announced they are filing an injunction to block the company's core acquisition.",
+    "expected_bullish": ["Technical Day Trader"],
+    "expected_bearish": ["Regulatory Compliance Watchdog", "Institutional Value Investor", "Aggressive Short-Seller"],
+    "expected_neutral": ["Industry Tech Expert"]
+  },
+  {
+    "id": 69,
+    "category": "Technical vs. Legal Conflicts",
+    "headline": "A massive volume spike pushed the price through overhead resistance, even as the company admitted to falsifying its Scope 1 carbon emission reports for the last three years.",
+    "expected_bullish": ["Technical Day Trader"],
+    "expected_bearish": ["ESG Specialist", "Regulatory Compliance Watchdog", "Brand Skeptic"],
+    "expected_neutral": ["Macro Economist"]
+  },
+  {
+    "id": 70,
+    "category": "Technical vs. Legal Conflicts",
+    "headline": "Technical analysts are calling for a 'golden cross,' ignoring the fact that the CEO was just indicted for insider trading.",
+    "expected_bullish": ["Technical Day Trader", "Brand Loyalist / Fanboy"],
+    "expected_bearish": ["Regulatory Compliance Watchdog", "Aggressive Short-Seller", "ESG Specialist"],
+    "expected_neutral": ["B2B Supply Chain Partner / Vanguard"]
+  },
+  {
+    "id": 71,
+    "category": "Technical vs. Legal Conflicts",
+    "headline": "The chart shows a textbook bullish pennant breakout, but the company's latest SEBI filing reveals a massive, undisclosed offshore liability.",
+    "expected_bullish": ["Technical Day Trader"],
+    "expected_bearish": ["Regulatory Compliance Watchdog", "Aggressive Short-Seller", "Institutional Value Investor"],
+    "expected_neutral": ["Industry Tech Expert"]
+  },
+  {
+    "id": 72,
+    "category": "Technical vs. Legal Conflicts",
+    "headline": "The stock gap-filled perfectly and is rallying, while consumer protection agencies just launched a joint probe into deceptive marketing practices.",
+    "expected_bullish": ["Technical Day Trader"],
+    "expected_bearish": ["Regulatory Compliance Watchdog", "Brand Skeptic", "ESG Specialist"],
+    "expected_neutral": ["Macro Economist"]
+  },
+  {
+    "id": 73,
+    "category": "Technical vs. Legal Conflicts",
+    "headline": "Algorithmic trading bots triggered a massive long position based on moving average convergence, while the company quietly settled a massive class-action lawsuit for workplace discrimination.",
+    "expected_bullish": ["Technical Day Trader"],
+    "expected_bearish": ["ESG Specialist", "Regulatory Compliance Watchdog", "Company Insider / Employee"],
+    "expected_neutral": ["Macro Economist"]
+  },
+  {
+    "id": 74,
+    "category": "Technical vs. Legal Conflicts",
+    "headline": "The stock is displaying incredible relative strength compared to the index, despite the FDA issuing a critical warning letter halting all clinical trials.",
+    "expected_bullish": ["Technical Day Trader"],
+    "expected_bearish": ["Regulatory Compliance Watchdog", "Industry Tech Expert", "Aggressive Short-Seller"],
+    "expected_neutral": ["Macro Economist"]
+  },
+  {
+    "id": 75,
+    "category": "Technical vs. Legal Conflicts",
+    "headline": "The price hit a 52-week high, masking a newly passed local ordinance that essentially zones their primary manufacturing plant out of existence.",
+    "expected_bullish": ["Technical Day Trader"],
+    "expected_bearish": ["Regulatory Compliance Watchdog", "Industry Tech Expert", "B2B Supply Chain Partner / Vanguard"],
+    "expected_neutral": ["Macro Economist"]
+  },
+  {
+    "id": 76,
+    "category": "Technical vs. Legal Conflicts",
+    "headline": "A bullish engulfing candlestick just formed on the weekly chart, while the company's auditor officially resigned citing 'unreliable financial data.'",
+    "expected_bullish": ["Technical Day Trader"],
+    "expected_bearish": ["Regulatory Compliance Watchdog", "Aggressive Short-Seller", "Institutional Value Investor"],
+    "expected_neutral": ["Industry Tech Expert"]
+  },
+  {
+    "id": 77,
+    "category": "Technical vs. Legal Conflicts",
+    "headline": "The stock successfully retested support and bounced 8%, ignoring the fact that their primary software algorithm was just ruled to be in violation of international copyright law.",
+    "expected_bullish": ["Technical Day Trader"],
+    "expected_bearish": ["Regulatory Compliance Watchdog", "Industry Tech Expert", "Brand Skeptic"],
+    "expected_neutral": ["Macro Economist"]
+  },
+  {
+    "id": 78,
+    "category": "Technical vs. Legal Conflicts",
+    "headline": "Day traders are aggressive buying the dip, oblivious to the fact that the company just lost its critical ISO 9001 compliance certification.",
+    "expected_bullish": ["Technical Day Trader", "Panic-Prone Retail Trader"],
+    "expected_bearish": ["Regulatory Compliance Watchdog", "Industry Tech Expert", "B2B Supply Chain Partner / Vanguard"],
+    "expected_neutral": ["Macro Economist"]
+  },
+  {
+    "id": 79,
+    "category": "Technical vs. Legal Conflicts",
+    "headline": "The chart is forming an ascending triangle, while a coalition of major institutional investors just announced complete divestment due to severe ESG failures.",
+    "expected_bullish": ["Technical Day Trader"],
+    "expected_bearish": ["ESG Specialist", "Institutional Value Investor", "Regulatory Compliance Watchdog"],
+    "expected_neutral": ["Company Insider / Employee"]
+  },
+  {
+    "id": 80,
+    "category": "Technical vs. Legal Conflicts",
+    "headline": "The stock broke out of a multi-year consolidation phase, just as the government officially revoked their primary operating license for repeated safety violations.",
+    "expected_bullish": ["Technical Day Trader"],
+    "expected_bearish": ["Regulatory Compliance Watchdog", "ESG Specialist", "Aggressive Short-Seller"],
+    "expected_neutral": ["Macro Economist"]
+  },
+  {
+    "id": 81,
+    "category": "Pure Noise Baselines",
+    "headline": "The company announced they are changing their official corporate logo font from Arial to a custom sans-serif typeface to 'better reflect modern values.'",
+    "expected_bullish": [],
+    "expected_bearish": [],
+    "expected_neutral": ["Algorithmic Quantitative Trader", "Institutional Value Investor", "Macro Economist", "Regulatory Compliance Watchdog", "Industry Tech Expert", "ESG Specialist", "Dividend Growth Investor", "B2B Supply Chain Partner / Vanguard"]
+  },
+  {
+    "id": 82,
+    "category": "Pure Noise Baselines",
+    "headline": "Management issued a press release celebrating the 20th anniversary of the company's founding with a catered lunch for all employees in the headquarters.",
+    "expected_bullish": [],
+    "expected_bearish": [],
+    "expected_neutral": ["Algorithmic Quantitative Trader", "Institutional Value Investor", "Macro Economist", "Regulatory Compliance Watchdog", "Industry Tech Expert", "ESG Specialist", "Dividend Growth Investor", "B2B Supply Chain Partner / Vanguard"]
+  },
+  {
+    "id": 83,
+    "category": "Pure Noise Baselines",
+    "headline": "The firm announced it will sponsor a local charity golf tournament next month, donating a branded tent for the 18th hole.",
+    "expected_bullish": [],
+    "expected_bearish": [],
+    "expected_neutral": ["Algorithmic Quantitative Trader", "Institutional Value Investor", "Macro Economist", "Regulatory Compliance Watchdog", "Industry Tech Expert", "ESG Specialist", "Dividend Growth Investor", "B2B Supply Chain Partner / Vanguard"]
+  },
+  {
+    "id": 84,
+    "category": "Pure Noise Baselines",
+    "headline": "The Chief Marketing Officer gave a generic interview to an industry blog discussing the 'importance of synergy and teamwork' in the modern workplace.",
+    "expected_bullish": [],
+    "expected_bearish": [],
+    "expected_neutral": ["Algorithmic Quantitative Trader", "Institutional Value Investor", "Macro Economist", "Regulatory Compliance Watchdog", "Industry Tech Expert", "ESG Specialist", "Dividend Growth Investor", "B2B Supply Chain Partner / Vanguard"]
+  },
+  {
+    "id": 85,
+    "category": "Pure Noise Baselines",
+    "headline": "The company proudly reported that they have updated the color scheme of their internal employee portal to be more aesthetically pleasing.",
+    "expected_bullish": [],
+    "expected_bearish": [],
+    "expected_neutral": ["Algorithmic Quantitative Trader", "Institutional Value Investor", "Macro Economist", "Regulatory Compliance Watchdog", "Industry Tech Expert", "ESG Specialist", "Dividend Growth Investor", "B2B Supply Chain Partner / Vanguard"]
+  },
+  {
+    "id": 86,
+    "category": "Pure Noise Baselines",
+    "headline": "A press release was issued confirming that the scheduled quarterly board meeting took place on Tuesday as planned, with no major agenda items discussed.",
+    "expected_bullish": [],
+    "expected_bearish": [],
+    "expected_neutral": ["Algorithmic Quantitative Trader", "Institutional Value Investor", "Macro Economist", "Regulatory Compliance Watchdog", "Industry Tech Expert", "ESG Specialist", "Dividend Growth Investor", "B2B Supply Chain Partner / Vanguard"]
+  },
+  {
+    "id": 87,
+    "category": "Pure Noise Baselines",
+    "headline": "The company announced a new initiative to encourage employees to carpool to work in order to alleviate parking lot congestion.",
+    "expected_bullish": [],
+    "expected_bearish": [],
+    "expected_neutral": ["Algorithmic Quantitative Trader", "Institutional Value Investor", "Macro Economist", "Regulatory Compliance Watchdog", "Industry Tech Expert", "ESG Specialist", "Dividend Growth Investor", "B2B Supply Chain Partner / Vanguard"]
+  },
+  {
+    "id": 88,
+    "category": "Pure Noise Baselines",
+    "headline": "The CEO posted a picture of his new rescue dog on his personal LinkedIn page, using the company hashtag.",
+    "expected_bullish": [],
+    "expected_bearish": [],
+    "expected_neutral": ["Algorithmic Quantitative Trader", "Institutional Value Investor", "Macro Economist", "Regulatory Compliance Watchdog", "Industry Tech Expert", "ESG Specialist", "Dividend Growth Investor", "B2B Supply Chain Partner / Vanguard"]
+  },
+  {
+    "id": 89,
+    "category": "Pure Noise Baselines",
+    "headline": "The firm published a 10-page retrospective on the history of their first office building, highlighting the original architectural blueprints.",
+    "expected_bullish": [],
+    "expected_bearish": [],
+    "expected_neutral": ["Algorithmic Quantitative Trader", "Institutional Value Investor", "Macro Economist", "Regulatory Compliance Watchdog", "Industry Tech Expert", "ESG Specialist", "Dividend Growth Investor", "B2B Supply Chain Partner / Vanguard"]
+  },
+  {
+    "id": 90,
+    "category": "Pure Noise Baselines",
+    "headline": "Management sent out a memo reminding all staff to update their email signatures to the new corporate standard before the end of the month.",
+    "expected_bullish": [],
+    "expected_bearish": [],
+    "expected_neutral": ["Algorithmic Quantitative Trader", "Institutional Value Investor", "Macro Economist", "Regulatory Compliance Watchdog", "Industry Tech Expert", "ESG Specialist", "Dividend Growth Investor", "B2B Supply Chain Partner / Vanguard"]
+  },
+  {
+    "id": 91,
+    "category": "Pure Noise Baselines",
+    "headline": "The company announced they will be adding two new flavors of sparkling water to the breakroom refrigerators based on an internal employee poll.",
+    "expected_bullish": [],
+    "expected_bearish": [],
+    "expected_neutral": ["Algorithmic Quantitative Trader", "Institutional Value Investor", "Macro Economist", "Regulatory Compliance Watchdog", "Industry Tech Expert", "ESG Specialist", "Dividend Growth Investor", "B2B Supply Chain Partner / Vanguard"]
+  },
+  {
+    "id": 92,
+    "category": "Pure Noise Baselines",
+    "headline": "A minor update to the corporate website was pushed live, fixing three broken hyperlinks and updating the copyright year in the footer.",
+    "expected_bullish": [],
+    "expected_bearish": [],
+    "expected_neutral": ["Algorithmic Quantitative Trader", "Institutional Value Investor", "Macro Economist", "Regulatory Compliance Watchdog", "Industry Tech Expert", "ESG Specialist", "Dividend Growth Investor", "B2B Supply Chain Partner / Vanguard"]
+  },
+  {
+    "id": 93,
+    "category": "Pure Noise Baselines",
+    "headline": "The firm issued a statement congratulating a mid-level regional manager for completing his first marathon over the weekend.",
+    "expected_bullish": [],
+    "expected_bearish": [],
+    "expected_neutral": ["Algorithmic Quantitative Trader", "Institutional Value Investor", "Macro Economist", "Regulatory Compliance Watchdog", "Industry Tech Expert", "ESG Specialist", "Dividend Growth Investor", "B2B Supply Chain Partner / Vanguard"]
+  },
+  {
+    "id": 94,
+    "category": "Pure Noise Baselines",
+    "headline": "The company's official Twitter account posted a generic 'Happy Friday' message featuring a stock photo of people smiling in an office.",
+    "expected_bullish": [],
+    "expected_bearish": [],
+    "expected_neutral": ["Algorithmic Quantitative Trader", "Institutional Value Investor", "Macro Economist", "Regulatory Compliance Watchdog", "Industry Tech Expert", "ESG Specialist", "Dividend Growth Investor", "B2B Supply Chain Partner / Vanguard"]
+  },
+  {
+    "id": 95,
+    "category": "Pure Noise Baselines",
+    "headline": "Management announced the formation of an internal 'party planning committee' to organize the annual summer picnic.",
+    "expected_bullish": [],
+    "expected_bearish": [],
+    "expected_neutral": ["Algorithmic Quantitative Trader", "Institutional Value Investor", "Macro Economist", "Regulatory Compliance Watchdog", "Industry Tech Expert", "ESG Specialist", "Dividend Growth Investor", "B2B Supply Chain Partner / Vanguard"]
+  },
+  {
+    "id": 96,
+    "category": "Pure Noise Baselines",
+    "headline": "The company released a short video demonstrating the proper way to recycle cardboard boxes in the shipping department.",
+    "expected_bullish": [],
+    "expected_bearish": [],
+    "expected_neutral": ["Algorithmic Quantitative Trader", "Institutional Value Investor", "Macro Economist", "Regulatory Compliance Watchdog", "Industry Tech Expert", "ESG Specialist", "Dividend Growth Investor", "B2B Supply Chain Partner / Vanguard"]
+  },
+  {
+    "id": 97,
+    "category": "Pure Noise Baselines",
+    "headline": "A press release confirmed that the company's headquarters will be closed for the upcoming standard national holiday.",
+    "expected_bullish": [],
+    "expected_bearish": [],
+    "expected_neutral": ["Algorithmic Quantitative Trader", "Institutional Value Investor", "Macro Economist", "Regulatory Compliance Watchdog", "Industry Tech Expert", "ESG Specialist", "Dividend Growth Investor", "B2B Supply Chain Partner / Vanguard"]
+  },
+  {
+    "id": 98,
+    "category": "Pure Noise Baselines",
+    "headline": "The firm proudly announced they have switched to a new vendor for their branded promotional pens and notepads.",
+    "expected_bullish": [],
+    "expected_bearish": [],
+    "expected_neutral": ["Algorithmic Quantitative Trader", "Institutional Value Investor", "Macro Economist", "Regulatory Compliance Watchdog", "Industry Tech Expert", "ESG Specialist", "Dividend Growth Investor", "B2B Supply Chain Partner / Vanguard"]
+  },
+  {
+    "id": 99,
+    "category": "Pure Noise Baselines",
+    "headline": "The CEO gave a brief speech at a local high school graduation, sharing generic advice about working hard and following one's dreams.",
+    "expected_bullish": [],
+    "expected_bearish": [],
+    "expected_neutral": ["Algorithmic Quantitative Trader", "Institutional Value Investor", "Macro Economist", "Regulatory Compliance Watchdog", "Industry Tech Expert", "ESG Specialist", "Dividend Growth Investor", "B2B Supply Chain Partner / Vanguard"]
+  },
+  {
+    "id": 100,
+    "category": "Pure Noise Baselines",
+    "headline": "The company published a blog post outlining the top five ways their employees like to relax on the weekends.",
+    "expected_bullish": [],
+    "expected_bearish": [],
+    "expected_neutral": ["Algorithmic Quantitative Trader", "Institutional Value Investor", "Macro Economist", "Regulatory Compliance Watchdog", "Industry Tech Expert", "ESG Specialist", "Dividend Growth Investor", "B2B Supply Chain Partner / Vanguard"]
+  }
+]

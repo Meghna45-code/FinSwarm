@@ -1,0 +1,148 @@
+{
+  "total_transcript_turns": 50,
+  "agents_evaluated": 14,
+  "passed_agents": 14,
+  "failed_agents": 0,
+  "scorecard": [
+    {
+      "agent": "Aggressive Short-Seller",
+      "turns_spoken": 6,
+      "veracity_accuracy": 100.0,
+      "source_citation_rate": 100.0,
+      "avg_conviction": 0.93,
+      "flame_transcript_score": 98.6,
+      "status": "PASS",
+      "sample_spoken_argument": "Delaying the Jio IPO to sink \u20b91.5 Lakh Crore into unproven battery gigafactories and AI data centres is pure desperation to mask a liquidity squeeze u..."
+    },
+    {
+      "agent": "Brand Loyalist / Fanboy",
+      "turns_spoken": 6,
+      "veracity_accuracy": 90.0,
+      "source_citation_rate": 100.0,
+      "avg_conviction": 0.5,
+      "flame_transcript_score": 85.0,
+      "status": "PASS",
+      "sample_spoken_argument": "Are you kidding me?! Delaying the IPO to pour \u20b91.5 Lakh Crore directly into the Kutch Battery Gigafactory and our Meta AI partnership in Jamnagar is t..."
+    },
+    {
+      "agent": "Brand Skeptic",
+      "turns_spoken": 4,
+      "veracity_accuracy": 100.0,
+      "source_citation_rate": 100.0,
+      "avg_conviction": 0.68,
+      "flame_transcript_score": 93.7,
+      "status": "PASS",
+      "sample_spoken_argument": "Delaying a multi-billion dollar IPO to shovel \u20b91.5 Lakh Crore into speculative battery sheds and AI hype is just a desperate shell game to hide a mass..."
+    },
+    {
+      "agent": "B2B Supply Chain Partner / Vanguard",
+      "turns_spoken": 4,
+      "veracity_accuracy": 100.0,
+      "source_citation_rate": 100.0,
+      "avg_conviction": 0.31,
+      "flame_transcript_score": 86.1,
+      "status": "PASS",
+      "sample_spoken_argument": "We are not losing sleep over delayed public listings, but diverting \u20b91.5 Lakh Crore into physical gigafactories means our raw material procurement ter..."
+    },
+    {
+      "agent": "Company Insider / Employee",
+      "turns_spoken": 4,
+      "veracity_accuracy": 100.0,
+      "source_citation_rate": 100.0,
+      "avg_conviction": 0.29,
+      "flame_transcript_score": 85.8,
+      "status": "PASS",
+      "sample_spoken_argument": "Our ground teams are entirely focused on executing the Kutch Gigafactory and Jamnagar AI data centre rollouts without needing external IPO crutches, a..."
+    },
+    {
+      "agent": "Dividend Growth Investor",
+      "turns_spoken": 4,
+      "veracity_accuracy": 100.0,
+      "source_citation_rate": 100.0,
+      "avg_conviction": 0.33,
+      "flame_transcript_score": 86.6,
+      "status": "PASS",
+      "sample_spoken_argument": "Diverting \u20b91.5 Lakh Crore of capital away from public listings into heavy industrial and AI gigafactories places an immense strain on free cash flow c..."
+    },
+    {
+      "agent": "Industry Tech Expert",
+      "turns_spoken": 4,
+      "veracity_accuracy": 100.0,
+      "source_citation_rate": 100.0,
+      "avg_conviction": 0.43,
+      "flame_transcript_score": 88.6,
+      "status": "PASS",
+      "sample_spoken_argument": "Technically speaking, Reliance Industries Limited's new path is highly viable. Verifies architectural breakthrough and production scale. Their enginee..."
+    },
+    {
+      "agent": "Technical Day Trader",
+      "turns_spoken": 3,
+      "veracity_accuracy": 100.0,
+      "source_citation_rate": 100.0,
+      "avg_conviction": 0.59,
+      "flame_transcript_score": 91.7,
+      "status": "PASS",
+      "sample_spoken_argument": "Range-bound trading for Reliance Industries Limited today. No clear trend. I'll wait for volume to pick up...."
+    },
+    {
+      "agent": "ESG Specialist",
+      "turns_spoken": 3,
+      "veracity_accuracy": 100.0,
+      "source_citation_rate": 100.0,
+      "avg_conviction": 0.41,
+      "flame_transcript_score": 88.1,
+      "status": "PASS",
+      "sample_spoken_argument": "Government-backed clean energy production incentives validate our strategic pivot toward the Kutch Gigafactory and green hydrogen initiatives, reinfor..."
+    },
+    {
+      "agent": "Institutional Value Investor",
+      "turns_spoken": 3,
+      "veracity_accuracy": 100.0,
+      "source_citation_rate": 100.0,
+      "avg_conviction": 0.58,
+      "flame_transcript_score": 91.7,
+      "status": "PASS",
+      "sample_spoken_argument": "Government-backed clean energy production incentives provide essential non-dilutive capital support that meaningfully strengthens the unit economics o..."
+    },
+    {
+      "agent": "Panic-Prone Retail Trader",
+      "turns_spoken": 2,
+      "veracity_accuracy": 95.0,
+      "source_citation_rate": 100.0,
+      "avg_conviction": 0.6,
+      "flame_transcript_score": 89.5,
+      "status": "PASS",
+      "sample_spoken_argument": "Oh no, a 3.98 Trillion rupee debt mountain combined with aggressive short-seller panic has me completely terrified that everything is collapsing! Shou..."
+    },
+    {
+      "agent": "Algorithmic Quantitative Trader",
+      "turns_spoken": 2,
+      "veracity_accuracy": 100.0,
+      "source_citation_rate": 100.0,
+      "avg_conviction": 0.9,
+      "flame_transcript_score": 98.0,
+      "status": "PASS",
+      "sample_spoken_argument": "Government-backed production-linked incentives provide non-dilutive capital support that mathematically optimizes unit economics for our Kutch Gigafac..."
+    },
+    {
+      "agent": "Regulatory Compliance Watchdog",
+      "turns_spoken": 3,
+      "veracity_accuracy": 100.0,
+      "source_citation_rate": 100.0,
+      "avg_conviction": 0.73,
+      "flame_transcript_score": 94.7,
+      "status": "PASS",
+      "sample_spoken_argument": "While government-backed production incentives offer regulatory alignment for our clean energy transition, statutory disclosures must maintain absolute..."
+    },
+    {
+      "agent": "Macro Economist",
+      "turns_spoken": 2,
+      "veracity_accuracy": 100.0,
+      "source_citation_rate": 100.0,
+      "avg_conviction": 0.81,
+      "flame_transcript_score": 96.2,
+      "status": "PASS",
+      "sample_spoken_argument": "Government-backed production incentives and fiscal subsidies provide vital non-dilutive capital support that fundamentally improves the unit economics..."
+    }
+  ]
+}

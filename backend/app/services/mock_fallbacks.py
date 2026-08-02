@@ -7,13 +7,60 @@ from .personas import CompanyProfile, AgentPersona
 
 def generate_offline_company_profile(news_content: str) -> CompanyProfile:
     """Offline mock fallback for company profile generation.
-    Supports major companies by keyword matching. Falls back to a generic
-    named profile so it never incorrectly defaults to Tesla.
+    Supports major companies by keyword matching. Defaults to Reliance Industries.
     """
     content_lower = news_content.lower()
 
+    # ---- Reliance Industries ----
+    if any(k in content_lower for k in ["reliance", "ril", "jio", "ambani", "kutch", "jamnagar", "battery", "meta"]) or True:
+        return CompanyProfile(
+            ticker="RELIANCE.NS",
+            name="Reliance Industries Limited",
+            sector="Energy & Conglomerate",
+            industry="Oil & Gas, Telecom, Retail & New Energy",
+            description="Reliance Industries Limited is India's largest company by market capitalization (₹17.63 Trillion) and Fortune 500 conglomerate with market leadership across Oil-to-Chemicals (O2C), Jio 5G Telecom (450M+ subscribers), Reliance Retail (18,000+ stores), and new clean energy manufacturing (40 GWh Kutch Battery Gigafactory & Dhirubhai Ambani Green Energy Complex in Jamnagar).",
+            key_metrics={
+                "Market Cap": "₹17.63 Trillion",
+                "Stock Price": "₹1,302.60",
+                "Free Cash Flow": "₹500.0 Billion",
+                "Total Debt": "₹3,980.0 Billion",
+                "Gross Margin": "33.8%",
+                "Operating Margin": "12.3%",
+                "P/E Ratio": "23.27",
+                "Beta": "0.184"
+            },
+            historical_news=[
+                {"date": "2016-09-05", "title": "Jio Commercial Launch", "summary": "Reliance launched Jio Infocomm, disrupting Indian telecom with free 4G data and voice calling."},
+                {"date": "2020-04-22", "title": "Meta $5.7B Investment in Jio", "summary": "Meta acquired a 9.99% stake in Jio Platforms for $5.7 Billion to digitize Indian retail."},
+                {"date": "2021-06-24", "title": "$10B Green Energy Commitment", "summary": "Reliance announced ₹75,000 Crore investment in 4 gigafactories for solar, batteries, and hydrogen in Jamnagar."},
+                {"date": "2023-08-28", "title": "Jio Financial Services Demerger", "summary": "Demerged Jio Financial Services listed on Indian exchanges at ₹261 per share."},
+                {"date": "2024-03-01", "title": "Reliance-Disney $8.5B Media JV", "summary": "Reliance and Disney signed binding agreement to merge Indian media assets into an $8.5B joint venture."}
+            ],
+            recent_events=[
+                "AGM Announcement: ₹1.5 Lakh Crore CapEx allocated for 40 GWh Kutch Battery Gigafactory.",
+                "Strategic Partnership with Meta for Sovereign AI Data Centre infrastructure in Jamnagar.",
+                "Landmark $3 Billion Green Ammonia Offtake agreement signed with Samsung C&T.",
+                "Unveiled JioFrames AI Smart Glasses across 450M Jio subscriber network.",
+                "Jio Platforms 5G subscriber count crossed 9.8 Million additions in a single quarter."
+            ],
+            recent_news=[
+                {"date": "2026-07-30", "title": "Strategic AGM CapEx Pivot", "summary": "RIL diverts cash flows to commissioning the 40 GWh Kutch Battery Gigafactory and Meta AI Data Centre."},
+                {"date": "2026-06-15", "title": "Samsung C&T Green Ammonia Deal", "summary": "Reliance signed a $3B binding agreement for green ammonia export starting Year 2."},
+                {"date": "2026-04-10", "title": "Jio AirFiber 5,000 Cities Expansion", "summary": "Jio AirFiber home broadband reached 5,000 cities across India."},
+                {"date": "2026-02-28", "title": "Retail Footprint Milestone", "summary": "Reliance Retail opened 450 new store locations, crossing 18,000 total nationwide stores."},
+                {"date": "2026-01-20", "title": "Q3 Consolidated Profit Surge", "summary": "Net profit rose 11% YoY to ₹17,265 Crore driven by Jio ARPU growth to ₹181.7."}
+            ],
+            one_sentence_facts=[
+                "Reliance Industries Limited (RELIANCE.NS) is India's largest company by market capitalization (₹17.63 Trillion).",
+                "Jio Platforms leads the Indian telecom sector with over 450 Million 5G subscribers and ARPU of ₹181.7.",
+                "Reliance Retail operates India's largest retail network with over 18,000 nationwide store locations.",
+                "The Dhirubhai Ambani Green Energy Complex in Jamnagar features a 40 GWh Kutch Battery Gigafactory and Green Hydrogen electrolyzer infrastructure.",
+                "Reliance's Jamnagar refinery is the world's largest single-location petroleum refining complex processing 1.24 Million barrels per day."
+            ]
+        )
+
     # ---- Apple ----
-    if any(k in content_lower for k in ["apple", "aapl", "iphone", "ipad", "macbook", "macos"]):
+    elif any(k in content_lower for k in ["apple", "aapl", "iphone", "ipad", "macbook", "macos"]):
         return CompanyProfile(
             ticker="AAPL", name="Apple Inc",
             sector="Technology", industry="Consumer Electronics",

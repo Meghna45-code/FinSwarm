@@ -20,92 +20,15 @@
   <!-- PDF.js for Client-Side PDF Parsing -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
   
-  <!-- Custom Styling -->
-  <link rel="stylesheet" href="style.css">
+  <!-- Custom Styling with Cache-Busting Parameters -->
+  <link rel="stylesheet" href="base.css?v=20260802_v28">
+  <link rel="stylesheet" href="components.css?v=20260802_v28">
+  <link rel="stylesheet" href="screens.css?v=20260802_v28">
+  <link rel="stylesheet" href="modals.css?v=20260802_v28">
+  <link rel="stylesheet" href="debate.css?v=20260802_v28">
 </head>
 <body>
 
-  <!-- ==================== LOGIN/AUTH SCREEN ==================== -->
-  <div id="auth-screen" class="screen active">
-    <div class="auth-card">
-      <div class="auth-logo">
-        <i class="fa-solid fa-hive auth-icon-glowing"></i>
-        <h1>FinSwarm</h1>
-        <p class="auth-tagline">Swarm Intelligence Financial Simulation</p>
-      </div>
-      
-      <!-- 1. SIGN IN FORM -->
-      <div id="form-signin" class="auth-form">
-        <div class="input-group">
-          <label for="signin-email">Email Address</label>
-          <input type="email" id="signin-email" placeholder="name@email.com" autocomplete="on">
-        </div>
-        <div class="input-group">
-          <label for="signin-password">Password</label>
-          <input type="password" id="signin-password" placeholder="••••••••" autocomplete="off">
-        </div>
-        <button id="btn-submit-signin" class="btn btn-primary btn-block" onclick="handleSignInSubmit()">
-          <i class="fa-solid fa-right-to-bracket"></i> Sign In
-        </button>
-        
-        <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-top: 10px;">
-          <a href="#" onclick="showAuthForm('register')" style="color: var(--color-secondary); text-decoration: none;">Create Account</a>
-          <a href="#" onclick="showAuthForm('forgot')" style="color: var(--text-muted); text-decoration: none;">Forgot Password?</a>
-        </div>
-      </div>
-
-      <!-- 2. REGISTER FORM -->
-      <div id="form-register" class="auth-form hidden">
-        <div class="input-group">
-          <label for="register-name">Display Name</label>
-          <input type="text" id="register-name" placeholder="John Doe" autocomplete="off">
-        </div>
-        <div class="input-group">
-          <label for="register-email">Email Address</label>
-          <input type="email" id="register-email" placeholder="name@email.com" autocomplete="on">
-        </div>
-        <div class="input-group">
-          <label for="register-password">Password</label>
-          <input type="password" id="register-password" placeholder="Min. 6 characters" autocomplete="off">
-        </div>
-        <button id="btn-submit-register" class="btn btn-primary btn-block" onclick="handleRegisterSubmit()">
-          <i class="fa-solid fa-user-plus"></i> Register
-        </button>
-        
-        <div style="text-align: center; font-size: 0.8rem; margin-top: 10px;">
-          <a href="#" onclick="showAuthForm('signin')" style="color: var(--color-secondary); text-decoration: none;">Already have an account? Sign In</a>
-        </div>
-      </div>
-
-      <!-- 3. FORGOT PASSWORD FORM -->
-      <div id="form-forgot" class="auth-form hidden">
-        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 12px; line-height: 1.4; text-align: left;">Enter your email below. We'll output a secure 6-digit password reset PIN to the backend terminal server log.</p>
-        <div class="input-group">
-          <label for="forgot-email">Email Address</label>
-          <input type="email" id="forgot-email" placeholder="name@email.com" autocomplete="on">
-        </div>
-        <button id="btn-submit-forgot" class="btn btn-primary btn-block" onclick="handleForgotPasswordSubmit()">
-          <i class="fa-solid fa-paper-plane"></i> Send OTP PIN
-        </button>
-        
-        <div style="text-align: center; font-size: 0.8rem; margin-top: 10px;">
-          <a href="#" onclick="showAuthForm('signin')" style="color: var(--color-secondary); text-decoration: none;">Back to Login</a>
-        </div>
-      </div>
-
-      <!-- 4. VERIFY OTP PIN FORM -->
-      <div id="form-verify" class="auth-form hidden">
-        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 12px; line-height: 1.4; text-align: left;">Enter the 6-digit PIN from the server console log to verify your identity.</p>
-        <div class="input-group">
-          <label for="reset-pin">6-Digit OTP PIN</label>
-          <input type="text" id="reset-pin" placeholder="123456" autocomplete="off">
-        </div>
-        <button id="btn-submit-verify" class="btn btn-primary btn-block" onclick="handleVerifyResetPinSubmit()">
-          <i class="fa-solid fa-circle-check"></i> Verify PIN
-        </button>
-        
-        <div style="text-align: center; font-size: 0.8rem; margin-top: 10px;">
-          <a href="#" onclick="showAuthForm('forgot')" style="color: var(--color-secondary); text-decoration: none;">Back to Send PIN</a>
         </div>
       </div>
 
@@ -201,118 +124,27 @@
 
   <!-- ==================== AGENTS CUSTOMIZATION SCREEN ==================== -->
   <div id="agents-config-screen" class="modal-overlay">
-    <div class="agents-config-container modal-content">
-      <div class="config-header" style="position: relative;">
+    <div class="agents-config-container modal-content" style="max-width: 900px; max-height: 85vh;">
+      <div class="config-header" style="position: relative; border-bottom: 1px solid var(--border-color); padding-bottom: 16px; margin-bottom: 20px;">
         <div class="config-logo">
-          <i class="fa-solid fa-users-gear text-glowing"></i> Swarm Debater Configurations
+          <i class="fa-solid fa-users-gear text-glowing"></i> Swarm Debater Alignment
         </div>
-        <h1>Swarm Agents Alignment</h1>
-        <p class="config-subtitle">Customize the parameters of the 14 market personas, delete them, or append custom ones. AI can autofill any fields you leave blank.</p>
+        <h1 style="font-size: 1.6rem; color: white;">Select Swarm Agents for Debate</h1>
+        <p class="config-subtitle" style="color: var(--text-muted); font-size: 0.9rem;">Choose which of the 14 financial personas will participate in the multi-agent debate simulation. Unchecked agents will be excluded from the swarm consensus calculation.</p>
         <button type="button" class="modal-close-btn" onclick="closeModal('agents-config-screen')" style="position: absolute; top: 20px; right: 20px; background: transparent; border: none; color: var(--text-muted); font-size: 1.5rem; cursor: pointer;">&times;</button>
       </div>
 
-      <div class="config-layout">
-        <!-- Left Panel: Table/List of Agents -->
-        <div class="config-left-panel">
-          <div class="agents-table-wrapper">
-            <table class="agents-table">
-              <thead>
-                <tr>
-                  <th>Agent Name</th>
-                  <th>Swarm Type</th>
-                  <th>Sentiment</th>
-                  <th>Conviction</th>
-                  <th>Reactivity</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody id="config-agents-tbody">
-                <!-- Loaded dynamically -->
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- Right Panel: Editor/Form -->
-        <div class="config-right-panel">
-          <!-- Swarm Command Console Card -->
-          <div id="swarm-command-card" class="agent-editor-card" style="margin-bottom: 20px;">
-            <h3>Conversational Swarm Control</h3>
-            <div class="input-group">
-              <label for="swarm-command-input">Command the Swarm</label>
-              <textarea id="swarm-command-input" rows="2" placeholder="Type a command (e.g. 'Add a highly bullish retail investor named Sarah', 'Remove the Day Trader', 'Make all retail agents bearish')..."></textarea>
-            </div>
-            <button type="button" id="swarm-command-btn" class="btn btn-primary" style="align-self: flex-end;">
-              <i class="fa-solid fa-wand-magic-sparkles"></i> Apply Command
-            </button>
-          </div>
-
-          <div class="agent-editor-card">
-            <h3 id="editor-title">Add/Edit Swarm Agent</h3>
-            
-            <form id="agent-editor-form" onsubmit="event.preventDefault();">
-              <div class="input-group">
-                <label for="editor-name">Agent Name</label>
-                <input type="text" id="editor-name" placeholder="e.g. Day Trader, ESG Advocate...">
-              </div>
-
-              <div class="input-group">
-                <label for="editor-swarm-type">Swarm Type</label>
-                <select id="editor-swarm-type">
-                  <option value="Retail & Consumer Swarm">Retail & Consumer Swarm</option>
-                  <option value="Trading & Analytical Swarm">Trading & Analytical Swarm</option>
-                  <option value="Internal & Structural Swarm">Internal & Structural Swarm</option>
-                </select>
-              </div>
-
-              <div class="input-group">
-                <label for="editor-role">Role Description</label>
-                <textarea id="editor-role" rows="2" placeholder="Describe their background and motives..."></textarea>
-              </div>
-
-              <div class="slider-group">
-                <div class="slider-header">
-                  <label for="editor-sentiment">Initial Sentiment</label>
-                  <span id="editor-sentiment-val">0.0</span>
-                </div>
-                <input type="range" id="editor-sentiment" min="-1" max="1" step="0.1" value="0.0">
-              </div>
-
-              <div class="slider-group">
-                <div class="slider-header">
-                  <label for="editor-conviction">Initial Conviction</label>
-                  <span id="editor-conviction-val">0.5</span>
-                </div>
-                <input type="range" id="editor-conviction" min="0" max="1" step="0.05" value="0.5">
-              </div>
-
-              <div class="slider-group">
-                <div class="slider-header">
-                  <label for="editor-reactivity">Reactivity Threshold</label>
-                  <span id="editor-reactivity-val">0.3</span>
-                </div>
-                <input type="range" id="editor-reactivity" min="0" max="1" step="0.05" value="0.3">
-              </div>
-
-              <div class="editor-buttons">
-                <button type="button" id="editor-autofill-btn" class="btn btn-secondary">
-                  <i class="fa-solid fa-wand-magic-sparkles"></i> Autofill / Fix with AI
-                </button>
-                <button type="button" id="editor-save-btn" class="btn btn-primary">
-                  <i class="fa-solid fa-check"></i> Save Agent
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+      <!-- Agent Selection Grid -->
+      <div id="agents-selection-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; max-height: 520px; overflow-y: auto; padding-right: 8px;">
+        <!-- Loaded dynamically via ui-modals.js -->
       </div>
 
-      <div class="config-footer">
-        <button id="config-reset-btn" class="btn btn-outline">
-          <i class="fa-solid fa-arrows-rotate"></i> Reset to Default Swarm
+      <div class="config-footer" style="margin-top: 24px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 16px;">
+        <button id="config-reset-btn" class="btn btn-outline" onclick="resetAgentsSelection()">
+          <i class="fa-solid fa-arrows-rotate"></i> Select All Agents
         </button>
-        <button id="config-launch-btn" class="btn btn-primary">
-          <i class="fa-solid fa-rocket"></i> Save Configuration & Proceed to Simulation Workspace
+        <button id="config-launch-btn" class="btn btn-primary" onclick="saveAgentsSelection()">
+          <i class="fa-solid fa-check"></i> Save Agent Selection & Proceed
         </button>
       </div>
     </div>
@@ -527,7 +359,7 @@
 
 
   <!-- ==================== MAIN DASHBOARD WORKSPACE ==================== -->
-  <div id="main-screen" class="screen">
+  <div id="main-screen" class="screen active">
 
     <!-- Agent Detail Modal (inside main-screen so stacking context is correct) -->
     <div id="agent-detail-modal" class="agent-detail-overlay" onclick="handleAgentModalBackdropClick(event)">
@@ -623,9 +455,6 @@
         <button id="tab-agents-btn" class="tab-btn" onclick="switchSidebarTab('agents')">
           <i class="fa-solid fa-users-gear"></i> Swarm Agents
         </button>
-        <button id="tab-history-btn" class="tab-btn" onclick="switchSidebarTab('history')">
-          <i class="fa-solid fa-clock-rotate-left"></i> History
-        </button>
       </div>
       
       <!-- Sidebar Content -->
@@ -634,44 +463,17 @@
         <!-- Company Tab Content -->
         <div id="tab-company" class="tab-content active">
 
-          <!-- Company Search Box -->
-          <div style="margin-bottom: 14px;">
-            <p style="font-size: 0.68rem; color: var(--text-dark); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; font-weight: 600;">Company Lookup</p>
-            <div style="display: flex; gap: 6px; align-items: stretch;">
-              <input
-                type="text"
-                id="ticker-search-input"
-                placeholder="Ticker or name (e.g. AAPL, Tesla)..."
-                onkeydown="handleTickerSearchKey(event)"
-                style="flex: 1; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: white; padding: 9px 11px; font-size: 0.8rem; outline: none; font-family: inherit;"
-              >
-              <button
-                onclick="loadCustomTicker()"
-                style="background: var(--color-primary); border: none; border-radius: var(--radius-sm); padding: 0 13px; color: white; cursor: pointer; font-size: 0.85rem; display: flex; align-items: center; gap: 5px; white-space: nowrap; font-family: inherit;"
-                title="Load company profile"
-              >
-                <i class="fa-solid fa-magnifying-glass"></i>
-              </button>
-            </div>
-          </div>
-
           <!-- Loading indicator -->
           <div id="company-loading" class="sidebar-loader hidden">
             <div class="spinner"></div>
             <span>Loading profile...</span>
           </div>
 
-          <!-- Empty state (shown before any search) -->
-          <div id="company-empty-state" style="text-align: center; padding: 44px 12px 24px; color: var(--text-muted);">
-            <i class="fa-solid fa-building-columns" style="font-size: 2.2rem; opacity: 0.18; display: block; margin-bottom: 14px;"></i>
-            <p style="font-size: 0.8rem; line-height: 1.6; opacity: 0.65;">Enter a stock ticker or company name above and press Enter to load the company profile and historical data.</p>
-          </div>
-
-          <!-- Company Profile (populated after search) -->
-          <div id="company-profile-view" class="hidden">
+          <!-- Company Profile -->
+          <div id="company-profile-view">
             <div class="company-card-header">
-              <h2 id="company-name">Tesla, Inc.</h2>
-              <span id="company-ticker" class="ticker-badge">TSLA</span>
+              <h2 id="company-name">Reliance Industries Limited</h2>
+              <span id="company-ticker" class="ticker-badge">RELIANCE.NS</span>
             </div>
             <p id="company-desc" class="company-desc">Electric vehicle and clean energy company.</p>
             <div class="meta-section">
@@ -700,49 +502,10 @@
             <!-- Populated automatically on login -->
           </div>
         </div>
-        
-        <!-- History Tab Content -->
-        <div id="tab-history" class="tab-content">
-
-          <!-- Company historical timeline (shown when a company is loaded) -->
-          <div id="history-company-section" class="hidden">
-            <div class="history-company-header" id="history-company-header">
-              <!-- Populated dynamically -->
-            </div>
-            <div class="meta-section" style="margin-top: 12px;">
-              <h3>Company Historical Timeline</h3>
-              <div class="news-list" id="history-milestones-list"></div>
-            </div>
-            <div class="sidebar-section-divider" style="margin: 18px 0 10px;"><i class="fa-solid fa-clock-rotate-left" style="font-size:0.7rem;"></i> Past Simulations</div>
-          </div>
-
-          <!-- Debate History search + list -->
-          <div class="agent-search-bar">
-            <i class="fa-solid fa-magnifying-glass"></i>
-            <input type="text" id="history-search-input" placeholder="Search history..." oninput="filterHistory()">
-          </div>
-          
-          <div id="history-loading" class="sidebar-loader hidden">
-            <div class="spinner"></div>
-            <span>Loading history...</span>
-          </div>
-          
-          <div id="history-list" class="agents-list">
-            <!-- Loaded dynamically -->
-          </div>
-        </div>
 
         
       </div>
       
-      <!-- User Profile Card -->
-      <div class="user-profile-card">
-        <div class="user-avatar" id="user-avatar-initials">FS</div>
-        <div class="user-info">
-          <span class="user-name" id="user-profile-name">Guest User</span>
-          <span class="user-role" id="user-profile-role">Market Observer</span>
-        </div>
-        <button id="logout-btn" title="Sign Out"><i class="fa-solid fa-right-from-bracket"></i></button>
       </div>
     </aside>
     
@@ -752,41 +515,25 @@
       <!-- Top Navigation -->
       <header class="top-nav">
         <div class="nav-left">
-          <h1 id="workspace-title">Analysis Workspace</h1>
-          <span id="active-mode-badge" class="mode-badge">
-            <i class="fa-solid fa-comments"></i> Live Debate Mode
-          </span>
+          <h1 id="workspace-title" style="margin: 0; font-size: 1.15rem; font-weight: 700;">FinSwarm Workspace</h1>
         </div>
-        <div class="nav-right" style="display: flex; gap: 12px; align-items: center;">
+        <div class="nav-center" style="display: flex; justify-content: center; align-items: center;">
+          <div class="workspace-mode-selector" style="display: flex; gap: 8px;">
+            <button id="btn-workspace-mode-debate" class="btn btn-sm btn-primary active" onclick="switchWorkspaceMode('debate')" style="white-space: nowrap;">
+              <i class="fa-solid fa-comments"></i> 1. Live Debate Stream
+            </button>
+            <button id="btn-workspace-mode-verdict" class="btn btn-sm btn-outline" onclick="switchWorkspaceMode('verdict')" style="white-space: nowrap;">
+              <i class="fa-solid fa-chart-line"></i> 2. See Direct Results
+            </button>
+          </div>
+        </div>
+        <div class="nav-right" style="display: flex; gap: 10px; align-items: center;">
           <button id="nav-api-key-btn" class="btn btn-outline btn-sm" onclick="toggleApiKeyInput()">
             <i class="fa-solid fa-key text-glowing"></i> API Key Settings
           </button>
           <button id="nav-tutorial-btn" class="btn btn-outline btn-sm">
-            <i class="fa-solid fa-circle-question"></i> Help & Tutorial
+            <i class="fa-solid fa-circle-question"></i> Help &amp; Tutorial
           </button>
-          
-          <div class="profile-dropdown-container" style="position: relative;">
-            <div class="user-avatar-top" id="user-avatar-top" onclick="toggleProfileDropdown()">
-              FS
-            </div>
-            
-            <div id="profile-dropdown" class="profile-dropdown hidden">
-              <div class="profile-dropdown-header">
-                <div id="dropdown-user-name" class="dropdown-name">Guest User</div>
-                <div id="dropdown-user-email" class="dropdown-email">guest@example.com</div>
-                <div id="dropdown-user-role" class="dropdown-role">Market Observer</div>
-              </div>
-              <button onclick="openProfileDetailsModal()" class="dropdown-item">
-                <i class="fa-solid fa-circle-user"></i> Profile Details
-              </button>
-              <button onclick="toggleApiKeyInput()" class="dropdown-item">
-                <i class="fa-solid fa-key"></i> API Key Settings
-              </button>
-              <button onclick="handleLogout()" class="dropdown-item logout-item">
-                <i class="fa-solid fa-right-from-bracket"></i> Sign Out
-              </button>
-            </div>
-          </div>
         </div>
       </header>
       
@@ -803,21 +550,21 @@
           <!-- Suggested Quick Start Prompts -->
           <div class="suggested-prompts-grid">
             <div class="suggested-card" onclick="setInputPrompt(this)">
-              <div class="card-icon"><i class="fa-solid fa-chart-line text-blue"></i></div>
-              <h3>Tariff Impact</h3>
-              <p>"Tesla faces potential tariff challenges under new trade policies, creating uncertainty for deliveries."</p>
+              <div class="card-icon"><i class="fa-solid fa-industry text-purple"></i></div>
+              <h3>Jio IPO Delay &amp; Battery Gigafactory</h3>
+              <p>"Reliance Industries abruptly delays the $4B Jio IPO, electing instead to divert ₹1.5 Lakh Crore into a 40 GWh Kutch Battery Gigafactory."</p>
             </div>
             
             <div class="suggested-card" onclick="setInputPrompt(this)">
-              <div class="card-icon"><i class="fa-solid fa-battery-quarter text-yellow"></i></div>
-              <h3>Supply Chain Bottlenecks</h3>
-              <p>"Tesla reports battery raw material shortage, delaying gigafactory production targets."</p>
+              <div class="card-icon"><i class="fa-solid fa-microchip text-blue"></i></div>
+              <h3>Meta AI Data Centre Partnership</h3>
+              <p>"Reliance announces a landmark Meta AI Data Centre partnership in Jamnagar and launches JioFrames AI Smart Glasses."</p>
             </div>
             
             <div class="suggested-card" onclick="setInputPrompt(this)">
-              <div class="card-icon"><i class="fa-solid fa-car-on text-green"></i></div>
-              <h3>FSD Breakthrough</h3>
-              <p>"Tesla secures regulatory approvals for Full Self-Driving rollout in major international markets."</p>
+              <div class="card-icon"><i class="fa-solid fa-leaf text-green"></i></div>
+              <h3>Green Ammonia Offtake Deal</h3>
+              <p>"Reliance signs a landmark $3 Billion Green Ammonia agreement with Samsung C&amp;T to accelerate clean energy exports."</p>
             </div>
           </div>
         </div>
@@ -879,16 +626,19 @@
             <!-- Valuation Grid Cards -->
             <div class="valuation-summary-grid">
               <div class="val-card">
-                <span class="val-label">Current Price</span>
-                <span class="val-value" id="verdict-current-price">$0.00</span>
+                <span class="val-label">Current Share Price (NSE)</span>
+                <span class="val-value" id="verdict-current-price">₹1,302.60</span>
+                <span style="font-size: 0.72rem; color: var(--text-muted); display: block; margin-top: 4px;">per individual stock share</span>
               </div>
               <div class="val-card">
-                <span class="val-label">Projected Price (6 Months)</span>
-                <span class="val-value text-glowing-green" id="verdict-projected-price">$0.00</span>
+                <span class="val-label">6-Month Target Share Price</span>
+                <span class="val-value text-glowing-green" id="verdict-projected-price">₹1,425.80</span>
+                <span style="font-size: 0.72rem; color: var(--text-muted); display: block; margin-top: 4px;">Swarm Consensus Target</span>
               </div>
               <div class="val-card">
-                <span class="val-label">Estimated Change</span>
-                <span class="val-value" id="verdict-change-percent">+0.00%</span>
+                <span class="val-label">Projected Return</span>
+                <span class="val-value" id="verdict-change-percent">+9.46%</span>
+                <span style="font-size: 0.72rem; color: var(--text-muted); display: block; margin-top: 4px;">Total Company Cap: ₹17.63 Lakh Cr</span>
               </div>
             </div>
             
@@ -898,9 +648,17 @@
               <p id="verdict-summary-text">...</p>
             </div>
             
+            <!-- Visual 30-Turn Swarm Sentiment Trajectory Graph -->
+            <div class="verdict-chart-card">
+              <h3><i class="fa-solid fa-chart-area text-glowing"></i> 30-Turn Swarm Sentiment &amp; Conviction Trajectory</h3>
+              <div class="chart-wrapper">
+                <canvas id="sentimentTrajectoryChart"></canvas>
+              </div>
+            </div>
+
             <!-- Visual Stock Projections Graph -->
             <div class="verdict-chart-card">
-              <h3>6-Month Stock Price Projections</h3>
+              <h3><i class="fa-solid fa-chart-line text-glowing"></i> 6-Month Stock Price Projections</h3>
               <div class="chart-wrapper">
                 <canvas id="projectionChart"></canvas>
               </div>
@@ -927,38 +685,13 @@
       
       <!-- Floating Edit Controls -->
       <div class="floating-edit-controls">
-        <button id="btn-edit-env" class="btn btn-secondary btn-sm" onclick="showEnvConfigScreen()">
-          <i class="fa-solid fa-earth-americas"></i> Edit Environment
-        </button>
         <button id="btn-edit-agents" class="btn btn-secondary btn-sm" onclick="showAgentsConfigScreen()">
-          <i class="fa-solid fa-users-gear"></i> Edit Swarm Agents
+          <i class="fa-solid fa-users-gear"></i> Swarm Agents Alignment
         </button>
       </div>
 
-      <!-- Hidden file input uploader -->
-      <input type="file" id="file-uploader" style="display: none;" accept=".txt,.csv,.json,.pdf" onchange="handleFileSelection(event)" />
-      
-      <!-- Attachment Preview Bar -->
-      <div id="attachment-preview-bar" class="attachment-preview-bar hidden"></div>
-
       <!-- Bottom Chat/Input Bar -->
       <footer class="chat-input-bar">
-
-
-        
-        <!-- Left attachment menu -->
-        <div class="chat-left-actions">
-          <button id="attachment-toggle-btn" class="chat-circle-btn" title="Add source context" onclick="toggleAttachmentMenu()">
-            <i class="fa-solid fa-plus"></i>
-          </button>
-          
-          <!-- Attachment Dropup Menu -->
-          <div id="attachment-menu" class="attachment-menu hidden">
-            <button onclick="triggerFileUploader()"><i class="fa-solid fa-file-pdf"></i> Upload SEC 10-K / PDF</button>
-            <button onclick="handleMockAttachment('link')"><i class="fa-solid fa-link"></i> Add Web Link</button>
-            <button onclick="handleMockAttachment('image')"><i class="fa-solid fa-image"></i> Attach Chart Screenshot</button>
-          </div>
-        </div>
         
         <!-- Center textarea input -->
         <div class="chat-input-container">
@@ -973,43 +706,7 @@
             <button id="btn-pause-debate" class="btn btn-outline btn-sm" onclick="toggleDebatePause()">
               <i class="fa-solid fa-pause"></i> Pause
             </button>
-            <button id="btn-skip-debate" class="btn btn-primary btn-sm" onclick="skipDebateToVerdict()">
-              <i class="fa-solid fa-angles-right"></i> Skip to Verdict
-            </button>
           </div>
-
-          <!-- View Selection Toggle Pop-up (next to mic) -->
-          <div class="view-toggle-container" style="position: relative; display: inline-block;">
-            <button id="view-toggle-btn" class="chat-circle-btn" title="Toggle Simulation View" onclick="toggleViewDropdown()">
-              <i class="fa-solid fa-bolt text-blue"></i>
-            </button>
-            
-            <div id="view-dropdown" class="mode-dropdown hidden" style="position: absolute; bottom: 50px; right: 0; width: 240px; z-index: 100;">
-              <div class="dropdown-header">Simulation Display</div>
-              <div class="dropdown-option active" data-view="silent" onclick="setSimulationView('silent')">
-                <div class="option-icon"><i class="fa-solid fa-bolt text-blue"></i></div>
-                <div class="option-details">
-                  <span class="option-title">Direct Results</span>
-                  <span class="option-desc">Show background calculations and faded facts.</span>
-                </div>
-                <i class="fa-solid fa-check check-icon"></i>
-              </div>
-              
-              <div class="dropdown-option" data-view="debate" onclick="setSimulationView('debate')">
-                <div class="option-icon"><i class="fa-solid fa-comments text-purple"></i></div>
-                <div class="option-details">
-                  <span class="option-title">View Live Debate</span>
-                  <span class="option-desc">Watch active arguments and agent reasoning.</span>
-                </div>
-                <i class="fa-solid fa-check check-icon"></i>
-              </div>
-            </div>
-          </div>
-          
-          <!-- Voice Button -->
-          <button id="voice-input-btn" class="chat-circle-btn" title="Speak to input" onclick="toggleVoiceInput()">
-            <i class="fa-solid fa-microphone"></i>
-          </button>
           
           <!-- Submit Button -->
           <button id="submit-prompt-btn" class="chat-circle-btn btn-send-active" title="Run simulation" onclick="submitSimulation()">
@@ -1022,31 +719,15 @@
     </main>
   </div>
 
-  <!-- Voice Recording Overlay -->
-  <div id="voice-overlay" class="voice-overlay hidden">
-    <div class="voice-overlay-content">
-      <div class="mic-wave-container">
-        <div class="mic-ring ring-1"></div>
-        <div class="mic-ring ring-2"></div>
-        <div class="mic-ring ring-3"></div>
-        <i class="fa-solid fa-microphone voice-active-icon"></i>
-      </div>
-      <h2>Listening to Voice Input...</h2>
-      <p id="voice-overlay-transcript">Start speaking now. Your voice is being transcribed.</p>
-      <button class="btn btn-danger btn-sm" onclick="stopVoiceInput(true)">Done Recording</button>
-      <button class="btn btn-outline btn-sm" onclick="stopVoiceInput(false)">Cancel</button>
-    </div>
-  </div>
-
-  <!-- Custom JS Application logic -->
-  <script src="api.js"></script>
-  <script src="chart-config.js"></script>
-  <script src="voice-handler.js"></script>
-  <script src="ui-renderers.js"></script>
-  <script src="ui-audio.js"></script>
-  <script src="ui-modals.js"></script>
-  <script src="auth.js"></script>
-  <script src="history.js"></script>
-  <script src="app.js?v=2"></script>
+  <!-- Custom JS Application logic with Cache-Busting Parameters -->
+  <script src="api.js?v=20260802_v28"></script>
+  <script src="chart-config.js?v=20260802_v28"></script>
+  <script src="voice-handler.js?v=20260802_v28"></script>
+  <script src="ui-renderers.js?v=20260802_v28"></script>
+  <script src="ui-audio.js?v=20260802_v28"></script>
+  <script src="ui-modals.js?v=20260802_v28"></script>
+  <script src="auth.js?v=20260802_v28"></script>
+  <script src="history.js?v=20260802_v28"></script>
+  <script src="app.js?v=20260802_v28"></script>
 </body>
 </html>

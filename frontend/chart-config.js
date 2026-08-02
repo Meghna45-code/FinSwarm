@@ -82,5 +82,99 @@ function renderChart(historical, projected) {
         }
       }
     }
+}
+
+let sentimentChartInstance = null;
+
+/**
+ * Renders the 30-turn Swarm Sentiment & Conviction trajectory chart.
+ * @param {Array<Object>} transcript - The 30 debate turns.
+ */
+function renderSwarmSentimentChart(transcript) {
+  const canvas = document.getElementById('sentimentTrajectoryChart');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+
+  if (sentimentChartInstance) {
+    sentimentChartInstance.destroy();
+  }
+
+  if (!transcript || transcript.length === 0) return;
+
+  const labels = transcript.map(t => `Turn #${t.turn}`);
+  const sentimentData = transcript.map(t => parseFloat(t.sentiment_after || 0.0));
+  const convictionData = transcript.map(t => (parseFloat(t.conviction_after || 0.5) * 100));
+
+  sentimentChartInstance = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          label: 'Swarm Sentiment (-1.0 to +1.0)',
+          data: sentimentData,
+          borderColor: '#10b981',
+          backgroundColor: 'rgba(16, 185, 129, 0.1)',
+          borderWidth: 3,
+          pointBackgroundColor: '#10b981',
+          pointRadius: 4,
+          fill: true,
+          tension: 0.3,
+          yAxisID: 'y'
+        },
+        {
+          label: 'Swarm Conviction % (0% to 100%)',
+          data: convictionData,
+          borderColor: '#6366f1',
+          backgroundColor: 'rgba(99, 102, 241, 0.05)',
+          borderWidth: 2,
+          borderDash: [5, 5],
+          pointBackgroundColor: '#6366f1',
+          pointRadius: 3,
+          fill: false,
+          tension: 0.3,
+          yAxisID: 'y1'
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          labels: {
+            color: '#94a3b8',
+            font: { family: 'Outfit', size: 12 }
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: 'rgba(255, 255, 255, 0.04)' },
+          ticks: { color: '#94a3b8', font: { family: 'Inter', size: 10 } }
+        },
+        y: {
+          type: 'linear',
+          display: true,
+          position: 'left',
+          min: -1.0,
+          max: 1.0,
+          grid: { color: 'rgba(255, 255, 255, 0.04)' },
+          ticks: { color: '#10b981', font: { family: 'Inter', size: 10 } },
+          title: { display: true, text: 'Sentiment (-1.0 to +1.0)', color: '#10b981' }
+        },
+        y1: {
+          type: 'linear',
+          display: true,
+          position: 'right',
+          min: 0,
+          max: 100,
+          grid: { drawOnChartArea: false },
+          ticks: { color: '#6366f1', font: { family: 'Inter', size: 10 } },
+          title: { display: true, text: 'Conviction %', color: '#6366f1' }
+        }
+      }
+    }
   });
 }
+

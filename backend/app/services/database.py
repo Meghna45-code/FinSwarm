@@ -71,10 +71,18 @@ def init_db():
                 moderator_note TEXT,
                 factuality_score REAL,
                 cited_source TEXT,
+                source_url TEXT,
                 is_factually_correct INTEGER,
                 FOREIGN KEY(debate_id) REFERENCES debates(id) ON DELETE CASCADE
             )
         """)
+
+        # Alter turns schema to add source_url column if missing (auto-migration)
+        try:
+            cursor.execute("SELECT source_url FROM turns LIMIT 1")
+        except sqlite3.OperationalError:
+            cursor.execute("ALTER TABLE turns ADD COLUMN source_url TEXT")
+            logger.info("Migrated turns table: Added source_url field.")
         
         conn.commit()
         logger.info(f"Database initialized successfully at: {DB_PATH}")
@@ -211,8 +219,8 @@ def save_debate(
                 INSERT INTO turns (
                     debate_id, turn_num, speaker, speech, internal_monologue,
                     sentiment_after, conviction_after, moderator_note,
-                    factuality_score, cited_source, is_factually_correct
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    factuality_score, cited_source, source_url, is_factually_correct
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 debate_id,
                 turn.get("turn", 0),
@@ -224,6 +232,7 @@ def save_debate(
                 turn.get("moderator_note"),
                 turn.get("factuality_score", 1.0),
                 turn.get("cited_source"),
+                turn.get("source_url") or "https://www.ril.com/investors/financial-reporting",
                 1 if turn.get("is_factually_correct", True) else 0
             ))
             
@@ -291,6 +300,7 @@ def get_debate_details(debate_id: str, user_email: str = None) -> Dict[str, Any]
                 "moderator_note": turn_dict["moderator_note"],
                 "is_factually_correct": bool(turn_dict["is_factually_correct"]),
                 "cited_source": turn_dict["cited_source"],
+                "source_url": turn_dict.get("source_url") or "https://www.ril.com/investors/financial-reporting",
                 "factuality_score": turn_dict["factuality_score"]
             })
             

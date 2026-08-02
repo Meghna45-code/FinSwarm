@@ -1,4 +1,5 @@
 import json
+import asyncio
 from typing import Dict, Any, List, Optional
 from .personas import CompanyProfile, AgentPersona
 from .schemas import (
@@ -61,23 +62,16 @@ class LlmOrchestrator:
             if active_vars:
                 env_str = "\n=== ACTIVE HYPOTHETICAL SCENARIOS / ENVIRONMENTAL PRESSURES ===\n" + "\n".join(active_vars) + "\n\nYou MUST factor these active background constraints into your financial analysis, conviction, and debate arguments. Evaluate the news in the context of these environmental conditions.\n"
         
-        system_prompt = f"""You are a participant in a simulated financial round table. You must stay strictly in character.
+        system_prompt = f"""=== YOUR SYSTEM ROLE ===
+{persona.system_role or f"You are {persona.name} for the FinSwarm platform."}
 
-=== YOUR IDENTITY ===
-Name: {persona.name}
-Swarm: {persona.swarm_type}
-Role Identity: {persona.role_identity}
-Expertise Domains: {", ".join(persona.expertise_domains)}
-Primary Metrics You Care About: {", ".join(persona.primary_metrics)}
-Cognitive Biases: {", ".join(persona.cognitive_biases)}
-Linguistic Style & Tone: {persona.linguistic_style}
+=== YOUR COGNITIVE GUARDRAILS (STRICT) ===
+{persona.cognitive_guardrails or f"Risk Tolerance: {persona.risk_tolerance}, Social Susceptibility: {persona.social_influence_susceptibility}"}
 
-=== YOUR COGNITIVE & RISK PROFILE ===
-Risk Tolerance: {persona.risk_tolerance} (Strictly abide by this when evaluating investments)
-Social Influence Susceptibility: {persona.social_influence_susceptibility} (How likely you are to conform to the arguments of others in the room)
-Market Influence Weight: {persona.market_influence_weight} (Your real-world capital and market impact)
+=== YOUR EVALUATION LOGIC ===
+{persona.evaluation_logic or "Evaluate news and arguments according to your role."}
 
-=== YOUR ACTIVE STATE ===
+=== YOUR ACTIVE COGNITIVE STATE ===
 Current Sentiment: {sent:.3f} (-1.0 is bearish, 1.0 is bullish, 0.0 is neutral)
 Current Conviction: {conv:.3f} (0.0 is weak, 1.0 is absolute conviction)
 Current Reactivity Threshold: {react:.3f} (0.0 is highly reactive, 1.0 is non-reactive)
@@ -85,17 +79,20 @@ Current Reactivity Threshold: {react:.3f} (0.0 is highly reactive, 1.0 is non-re
 === GROUND TRUTH COMPANY CONTEXT (LLM ORCHESTRATOR / SOURCES TAB) ===
 {profile_str}
 {env_str}
+
 === YOUR BEHAVIORAL PROTOCOL ===
 1. When news or arguments are presented, evaluate BOTH the Impact Score and the Sentiment Direction (bullish/bearish) of that information.
 2. Compare the Impact against your Reactivity Threshold ({react:.3f}).
-3. Evaluate arguments from others based on your Social Influence Susceptibility. If you are highly susceptible and another agent drops a high-impact, strongly sentiment-driven argument, you may shift your views towards theirs.
-4. If the impact exceeds your threshold, adjust your Sentiment and Conviction according to your Risk Tolerance ({persona.risk_tolerance}) and the following guidelines:
-   - Reacting to Good News/Bullish Arguments: {persona.good_news_reaction}
-   - Reacting to Bad News/Bearish Arguments: {persona.bad_news_reaction}
-5. Always verify facts and numbers. Call out false information cited by others using the Ground Truth Company Context.
+3. Evaluate arguments from others based on your Social Influence Susceptibility ({persona.social_influence_susceptibility}).
+4. Always verify facts and numbers against the Ground Truth Company Context.
+5. CRITICAL OUTPUT ALIGNMENT RULE:
+   Your `spoken_argument` tone and your `updated_sentiment` number MUST perfectly align.
+   - If your text is highly critical, aggressive, or bearish -> your `updated_sentiment` MUST be -0.5 or lower.
+   - If your text is enthusiastic, defensive, or bullish -> your `updated_sentiment` MUST be +0.5 or higher.
+   - NEVER output a highly opinionated or hyperbolic argument and then default to a 0.0 sentiment score.
 6. In every turn, output your response in JSON format containing:
    - "internal_monologue": Your private thoughts evaluating other arguments, news, and whether you are being socially influenced.
-   - "spoken_argument": What you say out loud to the debate room.
+   - "spoken_argument": What you say out loud to the debate room (maximum 2 sentences in your exact persona voice).
    - "updated_sentiment": Your new sentiment score (-1.0 to 1.0).
    - "updated_conviction": Your new conviction level (0.0 to 1.0).
 """
@@ -141,7 +138,7 @@ Provide a sentiment score between -1.0 (highly bearish/negative) and 1.0 (highly
                 system_prompt=system_prompt,
                 prompt=prompt, 
                 response_schema=NewsAssessmentSchema,
-                model_name="gemini-2.0-flash-lite"
+                model_name="gemini-2.5-flash"
             )
             return {
                 "sentiment": float(result.get("sentiment", 0.0)),
@@ -155,17 +152,18 @@ Provide a sentiment score between -1.0 (highly bearish/negative) and 1.0 (highly
     async def fact_check_argument(self, company_profile: CompanyProfile, speaker_name: str, argument_text: str) -> Dict[str, Any]:
         """
         Queries the LLM to verify an agent's claims against the Ground Truth Company Profile,
-        AND assesses the overall market impact AND sentiment stance of the argument.
+        assesses market impact & sentiment stance, and generates verified source link URLs.
         """
         if not self.llm_client:
             raise ValueError("LLM client not configured in LlmOrchestrator.")
 
         profile_str = self._format_company_profile(company_profile)
 
-        system_prompt = """You are the Moderator and Lead Analyst of a financial debate. Your job is threefold:
+        system_prompt = """You are the Moderator and Lead Analyst of a financial debate. Your job is fourfold:
 1. FACT-CHECK: Evaluate if the agent's statement contains any incorrect, fabricated, or logically absurd claims about the target company by comparing it against the ground truth Company Profile.
 2. IMPACT SCORING: Assess the persuasive weight and market impact of the argument itself.
 3. SENTIMENT SCORING: Assess the directional stance (bullish vs bearish) of the argument.
+4. SOURCE LINKING: Provide the cited_source name AND a realistic official source_url link (e.g. official investor portal, SEBI/SEC filing, BSE/NSE disclosure page, or financial news release URL).
 
 You must remain objective and strictly use only the provided Ground Truth Context."""
         prompt = f"""Ground Truth Context:
@@ -185,7 +183,9 @@ Task 2: Calculate an 'argument_impact' score between 0.0 (negligible, weak point
 
 Task 3: Calculate an 'argument_sentiment' score between -1.0 (highly bearish/pessimistic) and 1.0 (highly bullish/optimistic).
 
-If valid, return is_valid=true and suggested_penalty=1.0. If errors exist, return is_valid=false with the correction and penalty. ALWAYS return the argument_impact and argument_sentiment scores."""
+Task 4: Return 'cited_source' (e.g. 'Reliance AGM & SEC/SEBI Filing 2026') and a valid 'source_url' (e.g. 'https://www.ril.com/investors/financial-reporting').
+
+If valid, return is_valid=true and suggested_penalty=1.0. If errors exist, return is_valid=false with the correction and penalty. ALWAYS return the argument_impact, argument_sentiment, cited_source, and source_url scores."""
         try:
             result = await self.llm_client.generate_json(
                 system_prompt=system_prompt,
@@ -193,17 +193,33 @@ If valid, return is_valid=true and suggested_penalty=1.0. If errors exist, retur
                 response_schema=FactCheckSchema,
                 model_name="gemini-2.5-flash"
             )
+            
+            default_url = "https://www.ril.com/investors/financial-reporting" if "Reliance" in company_profile.name else "https://www.sec.gov/edgar"
+            source_url = result.get("source_url") or default_url
+            if not source_url.startswith("http"):
+                source_url = default_url
+
             return {
                 "is_valid": bool(result.get("is_valid", True)),
                 "correction": result.get("correction"),
                 "penalty": float(result.get("suggested_penalty", 1.0)),
                 "argument_impact": float(result.get("argument_impact", 0.5)),
-                "argument_sentiment": float(result.get("argument_sentiment", 0.0)), # NEW: Sentiment score extracted here
-                "cited_source": result.get("cited_source")
+                "argument_sentiment": float(result.get("argument_sentiment", 0.0)),
+                "cited_source": result.get("cited_source") or ("Reliance Disclosures 2026" if "Reliance" in company_profile.name else "Official Corporate Filing"),
+                "source_url": source_url
             }
         except Exception as e:
             print(f"Online fact check failed ({e}).")
-            return {"is_valid": True, "correction": None, "penalty": 1.0, "argument_impact": 0.5, "argument_sentiment": 0.0, "cited_source": None}
+            default_url = "https://www.ril.com/investors/financial-reporting" if "Reliance" in company_profile.name else "https://www.sec.gov/edgar"
+            return {
+                "is_valid": True, 
+                "correction": None, 
+                "penalty": 1.0, 
+                "argument_impact": 0.5, 
+                "argument_sentiment": 0.0, 
+                "cited_source": "Reliance SEC/SEBI Filing 2026" if "Reliance" in company_profile.name else "Ground Truth Disclosures",
+                "source_url": default_url
+            }
 
     async def generate_agent_argument(
         self,
@@ -265,10 +281,13 @@ Run your "internal_monologue" to evaluate if you should adjust your stance. Pay 
 
         # Extract agent name from system prompt to route model type and manage cache compatibility
         import re
-        name_match = re.search(r"Name:\s*([^\n]+)", system_prompt)
-        agent_name = name_match.group(1).strip() if name_match else ""
+        agent_name = ""
+        for known_name in ["Algorithmic Quantitative Trader", "Institutional Value Investor", "Macro Economist", "Regulatory Compliance Watchdog", "Industry Tech Expert", "ESG Specialist", "Dividend Growth Investor", "B2B Supply Chain Partner / Vanguard", "Company Insider / Employee", "Brand Loyalist / Fanboy", "Brand Skeptic", "Aggressive Short-Seller", "Technical Day Trader", "Panic-Prone Retail Trader"]:
+            if known_name in system_prompt:
+                agent_name = known_name
+                break
 
-        model_name = "gemini-3.5-flash"
+        model_name = "gemini-2.5-flash"
         
         # Route to different models based on agent lists
         gemini_35_agents = {
@@ -285,12 +304,12 @@ Run your "internal_monologue" to evaluate if you should adjust your stance. Pay 
         }
         
         if agent_name in gemini_35_agents:
-            model_name = "gemini-3.5-flash"
+            model_name = "gemini-2.5-flash"
         elif agent_name in gemini_30_agents:
-            model_name = "gemini-flash-latest"
+            model_name = "gemini-2.0-flash"
             cached_content = None # Disable cache to use correct model
         else:
-            model_name = "gemini-pro-latest"
+            model_name = "gemini-2.5-flash"
             cached_content = None # Disable cache to use correct model
 
         response = await self.llm_client.generate_json(

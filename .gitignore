@@ -1,0 +1,17 @@
+# Environment variables
+.env
+
+# Python cache & artifacts
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Databases & local state
+*.db
+!backend/app/finswarm.db
+
+# Temp / IDE
+.tempmediaStorage/
+.idea/
+.vscode/

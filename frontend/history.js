@@ -91,6 +91,7 @@ async function loadHistoricalDebate(debateId) {
 
 function populateTimelineFromTranscript() {
   const container = document.getElementById('debate-timeline-messages');
+  if (!container) return;
   container.innerHTML = '';
   if (simulationResult && simulationResult.transcript) {
     simulationResult.transcript.forEach(turn => {
@@ -102,9 +103,31 @@ function populateTimelineFromTranscript() {
           is_factually_correct: turn.is_factually_correct,
           factuality_score: turn.factuality_score,
           moderator_note: turn.moderator_note,
-          cited_source: turn.cited_source
+          cited_source: turn.cited_source,
+          source_url: turn.source_url
         });
       }
     });
   }
 }
+
+async function loadMasterDebateSession() {
+  try {
+    const masterDetails = await apiGetRelianceVerdict();
+    if (masterDetails) {
+      simulationResult = masterDetails;
+      companyData = masterDetails.company_profile;
+      if (typeof renderCompanyProfile === 'function' && companyData) {
+        renderCompanyProfile(companyData);
+      }
+      populateTimelineFromTranscript();
+      if (typeof updateSidebarAgentsParameters === 'function' && masterDetails.state_tracking && masterDetails.state_tracking.length > 0) {
+        const lastTurnState = masterDetails.state_tracking[masterDetails.state_tracking.length - 1].states;
+        updateSidebarAgentsParameters(lastTurnState);
+      }
+    }
+  } catch (err) {
+    console.warn("No master debate session loaded yet:", err);
+  }
+}
+

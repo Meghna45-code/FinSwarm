@@ -270,11 +270,15 @@ class ValuationModel:
         price_change_percent = round(((final_projected_price - current_price) / current_price) * 100, 2)
 
         return {
+            "ticker": company_profile.ticker,
             "current_price": current_price,
             "final_projected_price": final_projected_price,
+            "price_change_percent": price_change_percent,
+            "dcf_intrinsic_value": round(v_intrinsic, 2),
+            "wacc": round(wacc, 4),
+            "verdict_action": "BULLISH / ACCUMULATE" if price_change_percent > 3.0 else ("BEARISH / REDUCE" if price_change_percent < -3.0 else "NEUTRAL / HOLD"),
             "historical_prices": historical_prices,  # 13 points (Months -12 to 0)
             "projected_prices": projected_prices,    # 7 points (Months 0 to 6)
-            "price_change_percent": price_change_percent,
             "valuation_summary": (
                 f"The debate concluded with a consensus sentiment of {avg_sentiment:.2f} (conviction: {avg_conviction:.2f}). "
                 f"Based on a CAPM-derived WACC of {wacc*100:.1f}%, the Two-Stage DCF model projects an intrinsic fair value of "

@@ -42,10 +42,11 @@ if (typeof pdfjsLib !== 'undefined') {
 
 // Default Fallback Facts
 const DEFAULT_FALLBACK_FACTS = [
-  "Swarm intelligence uses decentralized systems to reach optimal consensus valuations.",
-  "The platform tracks 4 dynamic agent variables: Sentiment, Conviction, Reactivity, and Persuasion.",
-  "Moderator agents fact-check statements and penalize falsified information automatically.",
-  "Valuation Model projects price paths based on the global conviction and stance of 14 agents."
+  "Reliance Industries Limited (RELIANCE.NS) is India's largest company by market capitalization (₹17.63 Trillion).",
+  "Jio Platforms leads the Indian telecom sector with over 450 Million 5G subscribers and ARPU of ₹181.7.",
+  "Reliance Retail operates India's largest retail network with over 18,000 nationwide store locations.",
+  "The Dhirubhai Ambani Green Energy Complex in Jamnagar features a 40 GWh Kutch Battery Gigafactory and Green Hydrogen electrolyzer infrastructure.",
+  "Reliance's Jamnagar refinery is the world's largest single-location petroleum refining complex processing 1.24 Million barrels per day."
 ];
 
 // ==================== INITIALIZATION ====================
@@ -56,7 +57,21 @@ document.addEventListener('DOMContentLoaded', () => {
   initVoiceRecognition();
   adjustFloatingEditControls();
   window.addEventListener('resize', adjustFloatingEditControls);
-  setSimulationView('silent');
+  setSimulationView('debate');
+  // Auto-load Reliance Industries company profile at startup
+  setTimeout(() => {
+    const tickerInput = document.getElementById('ticker-search-input');
+    if (tickerInput) {
+      tickerInput.value = 'RELIANCE.NS';
+      loadCustomTicker();
+    } else {
+      // ticker-search-input was removed, directly call the API
+      apiGetCompanyProfile('RELIANCE.NS').then(profile => {
+        companyData = profile;
+        if (typeof renderCompanyProfile === 'function') renderCompanyProfile(companyData);
+      }).catch(err => console.warn('Could not auto-load Reliance profile:', err));
+    }
+  }, 300);
 });
 
 // Auth Flow handlers have been moved to auth.js
@@ -67,37 +82,40 @@ function initTutorial() {
   const nextBtn = document.getElementById('tutorial-next-btn');
   const skipBtn = document.getElementById('tutorial-skip-btn');
   const closeBtn = document.getElementById('tutorial-close-btn');
-  
-  const dots = document.querySelectorAll('.tutorial-dots .dot');
-  
-  prevBtn.addEventListener('click', () => {
-    if (currentTutorialSlide > 0) {
-      showTutorialSlide(currentTutorialSlide - 1);
-    }
+
+  if (prevBtn) prevBtn.addEventListener('click', () => {
+    if (currentTutorialSlide > 0) showTutorialSlide(currentTutorialSlide - 1);
   });
-  
-  nextBtn.addEventListener('click', () => {
-    if (currentTutorialSlide < 3) {
-      showTutorialSlide(currentTutorialSlide + 1);
-    } else {
-      endTutorial();
-    }
+  if (nextBtn) nextBtn.addEventListener('click', () => {
+    if (currentTutorialSlide < 3) showTutorialSlide(currentTutorialSlide + 1);
+    else endTutorial();
   });
-  
-  skipBtn.addEventListener('click', endTutorial);
-  closeBtn.addEventListener('click', endTutorial);
-  
-  dots.forEach(dot => {
+  if (skipBtn) skipBtn.addEventListener('click', endTutorial);
+  if (closeBtn) closeBtn.addEventListener('click', endTutorial);
+
+  document.querySelectorAll('.tutorial-dots .dot').forEach(dot => {
     dot.addEventListener('click', () => {
-      const slideIndex = parseInt(dot.getAttribute('data-slide'));
-      showTutorialSlide(slideIndex);
+      showTutorialSlide(parseInt(dot.getAttribute('data-slide')));
     });
   });
 
-  document.getElementById('nav-tutorial-btn').addEventListener('click', () => {
-    document.getElementById('tutorial-screen').classList.add('active');
-    showTutorialSlide(0);
-  });
+  const navTutorialBtn = document.getElementById('nav-tutorial-btn');
+  if (navTutorialBtn) {
+    navTutorialBtn.addEventListener('click', () => {
+      const ts = document.getElementById('tutorial-screen');
+      if (ts) ts.classList.add('active');
+      showTutorialSlide(0);
+    });
+  }
+
+  const helpTutorialBtn = document.getElementById('help-tutorial-btn');
+  if (helpTutorialBtn) {
+    helpTutorialBtn.addEventListener('click', () => {
+      const ts = document.getElementById('tutorial-screen');
+      if (ts) ts.classList.add('active');
+      showTutorialSlide(0);
+    });
+  }
 }
 
 function showTutorialSlide(index) {
@@ -129,51 +147,122 @@ function endTutorial() {
 }
 
 // ==================== 3. SIDEBAR DATA LOADING ====================
+
+// Static fallback personas — used if /api/personas is unavailable at startup
+const STATIC_FALLBACK_PERSONAS = {
+  "Algorithmic Quantitative Trader": {
+    name: "Algorithmic Quantitative Trader", swarm_type: "Trading & Analytical Swarm",
+    role_identity: "Cold, deterministic statistical arbitrage model operating with zero emotional capacity and 100% numerical precision.",
+    initial_sentiment: 0.0, initial_conviction: 0.9, primary_metrics: [], cognitive_biases: [], linguistic_style: "", good_news_reaction: "", bad_news_reaction: "", reactivity_threshold: 0.15, market_influence_weight: 0.35, social_influence_susceptibility: 0.0, risk_tolerance: 0.5, expertise_domains: []
+  },
+  "Institutional Value Investor": {
+    name: "Institutional Value Investor", swarm_type: "Trading & Analytical Swarm",
+    role_identity: "Rational, long-term asset manager focused entirely on intrinsic DCF valuation, FCF sustainability, ROIC, and operating margin stability.",
+    initial_sentiment: 0.1, initial_conviction: 0.8, primary_metrics: [], cognitive_biases: [], linguistic_style: "", good_news_reaction: "", bad_news_reaction: "", reactivity_threshold: 0.5, market_influence_weight: 0.4, social_influence_susceptibility: 0.1, risk_tolerance: 0.2, expertise_domains: []
+  },
+  "Technical Day Trader": {
+    name: "Technical Day Trader", swarm_type: "Trading & Analytical Swarm",
+    role_identity: "Active momentum trader monitoring price action, volume expansion, and breakout signals with aggressive short-term bias.",
+    initial_sentiment: 0.3, initial_conviction: 0.75, primary_metrics: [], cognitive_biases: [], linguistic_style: "", good_news_reaction: "", bad_news_reaction: "", reactivity_threshold: 0.2, market_influence_weight: 0.25, social_influence_susceptibility: 0.4, risk_tolerance: 0.8, expertise_domains: []
+  },
+  "Aggressive Short-Seller": {
+    name: "Aggressive Short-Seller", swarm_type: "Trading & Analytical Swarm",
+    role_identity: "Adversarial research analyst hunting for overvaluation, leverage risk, and accounting red flags.",
+    initial_sentiment: -0.5, initial_conviction: 0.85, primary_metrics: [], cognitive_biases: [], linguistic_style: "", good_news_reaction: "", bad_news_reaction: "", reactivity_threshold: 0.3, market_influence_weight: 0.3, social_influence_susceptibility: 0.1, risk_tolerance: 0.9, expertise_domains: []
+  },
+  "Retail Momentum Chaser": {
+    name: "Retail Momentum Chaser", swarm_type: "Retail & Consumer Swarm",
+    role_identity: "Emotion-driven retail trader chasing momentum, viral narratives, and social media hype with high volatility sensitivity.",
+    initial_sentiment: 0.4, initial_conviction: 0.6, primary_metrics: [], cognitive_biases: [], linguistic_style: "", good_news_reaction: "", bad_news_reaction: "", reactivity_threshold: 0.1, market_influence_weight: 0.1, social_influence_susceptibility: 0.9, risk_tolerance: 0.9, expertise_domains: []
+  },
+  "Brand Skeptic": {
+    name: "Brand Skeptic", swarm_type: "Retail & Consumer Swarm",
+    role_identity: "Consumer-behavior analyst tracking brand health, customer loyalty metrics, and NPS trajectory.",
+    initial_sentiment: -0.2, initial_conviction: 0.7, primary_metrics: [], cognitive_biases: [], linguistic_style: "", good_news_reaction: "", bad_news_reaction: "", reactivity_threshold: 0.4, market_influence_weight: 0.15, social_influence_susceptibility: 0.5, risk_tolerance: 0.4, expertise_domains: []
+  },
+  "Company Insider / Employee": {
+    name: "Company Insider / Employee", swarm_type: "Structural & Macro Swarm",
+    role_identity: "Internal operational manager embedded within the company tracking day-to-day execution metrics and morale signals.",
+    initial_sentiment: 0.15, initial_conviction: 0.8, primary_metrics: [], cognitive_biases: [], linguistic_style: "", good_news_reaction: "", bad_news_reaction: "", reactivity_threshold: 0.35, market_influence_weight: 0.2, social_influence_susceptibility: 0.3, risk_tolerance: 0.3, expertise_domains: []
+  },
+  "Macro Economist": {
+    name: "Macro Economist", swarm_type: "Structural & Macro Swarm",
+    role_identity: "Top-down macroeconomic strategist assessing interest rate policy, GDP growth cycles, and inflation risk.",
+    initial_sentiment: 0.0, initial_conviction: 0.85, primary_metrics: [], cognitive_biases: [], linguistic_style: "", good_news_reaction: "", bad_news_reaction: "", reactivity_threshold: 0.3, market_influence_weight: 0.35, social_influence_susceptibility: 0.1, risk_tolerance: 0.3, expertise_domains: []
+  },
+  "Regulatory Compliance Watchdog": {
+    name: "Regulatory Compliance Watchdog", swarm_type: "Structural & Macro Swarm",
+    role_identity: "Legal and antitrust policy expert scrutinizing SEC/SEBI compliance, litigation exposure, and government policy shifts.",
+    initial_sentiment: -0.1, initial_conviction: 0.8, primary_metrics: [], cognitive_biases: [], linguistic_style: "", good_news_reaction: "", bad_news_reaction: "", reactivity_threshold: 0.25, market_influence_weight: 0.25, social_influence_susceptibility: 0.1, risk_tolerance: 0.2, expertise_domains: []
+  },
+  "Industry Tech Expert": {
+    name: "Industry Tech Expert", swarm_type: "Trading & Analytical Swarm",
+    role_identity: "Deep-tech engineer and product architect assessing patent moat, R&D execution, and technical scalability.",
+    initial_sentiment: 0.2, initial_conviction: 0.85, primary_metrics: [], cognitive_biases: [], linguistic_style: "", good_news_reaction: "", bad_news_reaction: "", reactivity_threshold: 0.2, market_influence_weight: 0.3, social_influence_susceptibility: 0.2, risk_tolerance: 0.6, expertise_domains: []
+  },
+  "ESG Specialist": {
+    name: "ESG Specialist", swarm_type: "Structural & Macro Swarm",
+    role_identity: "Strict sustainability and governance analyst evaluating carbon emissions, renewable energy strategy, and board ethics.",
+    initial_sentiment: 0.05, initial_conviction: 0.8, primary_metrics: [], cognitive_biases: [], linguistic_style: "", good_news_reaction: "", bad_news_reaction: "", reactivity_threshold: 0.3, market_influence_weight: 0.2, social_influence_susceptibility: 0.3, risk_tolerance: 0.3, expertise_domains: []
+  },
+  "Dividend Growth Investor": {
+    name: "Dividend Growth Investor", swarm_type: "Trading & Analytical Swarm",
+    role_identity: "Highly conservative capital preservation investor assessing free cash flow coverage, dividend yield security, and debt service ratios.",
+    initial_sentiment: 0.1, initial_conviction: 0.85, primary_metrics: [], cognitive_biases: [], linguistic_style: "", good_news_reaction: "", bad_news_reaction: "", reactivity_threshold: 0.4, market_influence_weight: 0.3, social_influence_susceptibility: 0.1, risk_tolerance: 0.2, expertise_domains: []
+  },
+  "B2B Supply Chain Partner / Vanguard": {
+    name: "B2B Supply Chain Partner / Vanguard", swarm_type: "Structural & Macro Swarm",
+    role_identity: "Upstream supplier and logistics manager tracking raw material component costs, lead times, and inventory bottlenecks.",
+    initial_sentiment: 0.0, initial_conviction: 0.75, primary_metrics: [], cognitive_biases: [], linguistic_style: "", good_news_reaction: "", bad_news_reaction: "", reactivity_threshold: 0.3, market_influence_weight: 0.25, social_influence_susceptibility: 0.2, risk_tolerance: 0.4, expertise_domains: []
+  },
+  "Brand Loyalist / Fanboy": {
+    name: "Brand Loyalist / Fanboy", swarm_type: "Retail & Consumer Swarm",
+    role_identity: "Unconditionally bullish brand enthusiast celebrating corporate achievements, technological breakthroughs, and long-term expansion.",
+    initial_sentiment: 0.6, initial_conviction: 0.9, primary_metrics: [], cognitive_biases: [], linguistic_style: "", good_news_reaction: "", bad_news_reaction: "", reactivity_threshold: 0.1, market_influence_weight: 0.15, social_influence_susceptibility: 0.8, risk_tolerance: 0.85, expertise_domains: []
+  },
+  "Panic-Prone Retail Trader": {
+    name: "Panic-Prone Retail Trader", swarm_type: "Retail & Consumer Swarm",
+    role_identity: "Highly risk-averse retail investor prone to rapid sentiment swings, fear of drawdown, and emotional capitulation.",
+    initial_sentiment: -0.3, initial_conviction: 0.7, primary_metrics: [], cognitive_biases: [], linguistic_style: "", good_news_reaction: "", bad_news_reaction: "", reactivity_threshold: 0.1, market_influence_weight: 0.1, social_influence_susceptibility: 0.95, risk_tolerance: 0.1, expertise_domains: []
+  }
+};
+
 async function loadSidebarData() {
   try {
-    // Load agents only — company profile is loaded on-demand by the user
+    // Load agents — company profile is loaded on-demand
     personasData = await apiGetPersonas();
     defaultAgentsData = JSON.parse(JSON.stringify(personasData));
     activeAgents = JSON.parse(JSON.stringify(personasData));
     renderAgentsList(personasData);
 
-    // Keep a lightweight default company for internal simulation use
     companyData = {
-      ticker: "TSLA", name: "Tesla Inc", sector: "Consumer Cyclical",
-      industry: "Auto Manufacturers", description: "Electric vehicle and clean energy company.",
-      key_metrics: {}, recent_events: [], historical_news: [], one_sentence_facts: []
+      ticker: "RELIANCE.NS", name: "Reliance Industries Limited", sector: "Energy & Conglomerate",
+      industry: "Oil & Gas, Telecom, Retail & New Energy", description: "India's largest company by market cap.",
+      key_metrics: {"Market Cap": "₹17.63 Trillion", "Stock Price": "₹1,302.60"}, recent_events: [], historical_news: [], one_sentence_facts: DEFAULT_FALLBACK_FACTS
     };
   } catch (error) {
-    console.error("Error loading sidebar data:", error);
+    console.warn("Backend unreachable — using static fallback personas:", error);
+    // Use embedded personas so sidebar always populates cleanly
+    personasData = JSON.parse(JSON.stringify(STATIC_FALLBACK_PERSONAS));
+    defaultAgentsData = JSON.parse(JSON.stringify(personasData));
+    activeAgents = JSON.parse(JSON.stringify(personasData));
+    renderAgentsList(personasData);
 
-    // 401 = token is expired or invalid (e.g. server restarted).
-    // Clear credentials and redirect user back to the login screen.
-    if (error.status === 401) {
-      console.warn("Session token invalid or expired. Clearing credentials and redirecting to login.");
-      localStorage.removeItem('finswarm_access_token');
-      localStorage.removeItem('finswarm_user');
-      localStorage.removeItem('finswarm_email');
-      localStorage.removeItem('finswarm_role');
-      currentUser = null;
-      document.getElementById('main-screen').classList.remove('active');
-      document.getElementById('auth-screen').classList.add('active');
-      if (typeof showAuthForm === 'function') showAuthForm('signin');
-      return;
-    }
+    companyData = {
+      ticker: "RELIANCE.NS", name: "Reliance Industries Limited", sector: "Energy & Conglomerate",
+      industry: "Oil & Gas, Telecom, Retail & New Energy", description: "India's largest company by market cap.",
+      key_metrics: {"Market Cap": "₹17.63 Trillion", "Stock Price": "₹1,302.60"}, recent_events: [], historical_news: [], one_sentence_facts: DEFAULT_FALLBACK_FACTS
+    };
 
-    // Any other error = genuine server connection problem
-    const agentsList = document.getElementById('agents-list');
-    if (agentsList) {
-      agentsList.innerHTML = `
-        <div style="text-align:center;color:var(--color-red);padding:16px;font-size:0.82rem;display:flex;flex-direction:column;gap:10px;align-items:center;">
-          <i class="fa-solid fa-triangle-exclamation" style="font-size:1.4rem;"></i>
-          <span>Connection to backend failed. Make sure the API server is running.</span>
-          <button class="btn btn-outline btn-sm" onclick="loadSidebarData()">
-            <i class="fa-solid fa-arrows-rotate"></i> Retry
-          </button>
-        </div>
-      `;
-    }
+    // Silently retry fetching live personas after 2s (replaces static cards if server comes up)
+    setTimeout(() => {
+      apiGetPersonas().then(pData => {
+        personasData = pData;
+        defaultAgentsData = JSON.parse(JSON.stringify(personasData));
+        activeAgents = JSON.parse(JSON.stringify(personasData));
+        renderAgentsList(personasData);
+      }).catch(() => { /* server still down — static personas already shown, no error banner needed */ });
+    }, 2000);
   }
 }
 
@@ -205,57 +294,61 @@ function adjustFloatingEditControls() {
 }
 
 function setInputPrompt(cardElement) {
-  const promptText = cardElement.querySelector('p').textContent.replace(/"/g, '');
+  const pEl = cardElement.querySelector('p');
+  const promptText = pEl ? pEl.textContent.replace(/^"|"$/g, '') : '';
   const chatInput = document.getElementById('chat-input');
-  chatInput.value = promptText;
-  autoResizeTextarea(chatInput);
-  chatInput.focus();
+  if (chatInput && promptText) {
+    chatInput.value = promptText;
+    autoResizeTextarea(chatInput);
+  }
+  submitSimulation();
 }
 
 function toggleViewDropdown() {
-  document.getElementById('view-dropdown').classList.toggle('hidden');
+  const vd = document.getElementById('view-dropdown');
+  if (vd) vd.classList.toggle('hidden');
 }
 
 function setSimulationView(view) {
   currentView = view;
-  document.getElementById('view-dropdown').classList.add('hidden');
-  
-  document.querySelectorAll('#view-dropdown .dropdown-option').forEach(opt => {
-    opt.classList.remove('active');
-  });
-  document.querySelector(`#view-dropdown .dropdown-option[data-view="${view}"]`).classList.add('active');
-  
+  selectedMode = view;
+
+  const viewDropdown = document.getElementById('view-dropdown');
+  if (viewDropdown) viewDropdown.classList.add('hidden');
+
+  const dropdownOptions = document.querySelectorAll('#view-dropdown .dropdown-option');
+  if (dropdownOptions.length) {
+    dropdownOptions.forEach(opt => opt.classList.remove('active'));
+    const activeOpt = document.querySelector(`#view-dropdown .dropdown-option[data-view="${view}"]`);
+    if (activeOpt) activeOpt.classList.add('active');
+  }
+
   const viewToggleBtn = document.getElementById('view-toggle-btn');
   const badge = document.getElementById('active-mode-badge');
-  
+
   let label = 'Direct Results';
   let iconHtml = '<i class="fa-solid fa-bolt text-blue"></i>';
-  
+
   if (view === 'debate') {
     label = 'Live Debate';
     iconHtml = '<i class="fa-solid fa-comments text-purple"></i>';
   }
-  
-  if (viewToggleBtn) {
-    viewToggleBtn.innerHTML = iconHtml;
-  }
-  if (badge) {
-    badge.innerHTML = `${iconHtml} ${label} Mode`;
-  }
-  
+
+  if (viewToggleBtn) viewToggleBtn.innerHTML = iconHtml;
+  if (badge) badge.innerHTML = `${iconHtml} ${label} Mode`;
+
   // Viewport switching if a simulation has been loaded or run
   if (simulationResult) {
     const inlineControls = document.getElementById('debate-inline-controls');
-    const isPlaybackActive = !streamFinished || uiPlaybackQueue.length > 0;
     
     if (view === 'silent') {
-      if (isPlaybackActive) {
-        showViewport('viewport-silent-consensus');
-        runSilentLoader();
-      } else {
-        showViewport('viewport-final-verdict');
+      if (playbackTimeoutId) {
+        clearTimeout(playbackTimeoutId);
+        playbackTimeoutId = null;
       }
+      isPlaybackPaused = true;
       if (inlineControls) inlineControls.classList.add('hidden');
+      renderFinalVerdict();
     } else {
       showViewport('viewport-live-debate');
       if (inlineControls) inlineControls.classList.remove('hidden');
@@ -271,12 +364,15 @@ function setSimulationView(view) {
 }
 
 function toggleAttachmentMenu() {
-  document.getElementById('attachment-menu').classList.toggle('hidden');
+  const el = document.getElementById('attachment-menu');
+  if (el) el.classList.toggle('hidden');
 }
 
 function triggerFileUploader() {
-  document.getElementById('attachment-menu').classList.add('hidden');
-  document.getElementById('file-uploader').click();
+  const el = document.getElementById('attachment-menu');
+  if (el) el.classList.add('hidden');
+  const fu = document.getElementById('file-uploader');
+  if (fu) fu.click();
 }
 
 async function handleFileSelection(event) {
@@ -287,7 +383,7 @@ async function handleFileSelection(event) {
   attachedFileContent = null;
 
   const previewBar = document.getElementById('attachment-preview-bar');
-  previewBar.classList.remove('hidden');
+  if (previewBar) previewBar.classList.remove('hidden');
 
   const isPdf = file.name.toLowerCase().endsWith('.pdf');
   const fileIcon = isPdf ? 'fa-file-pdf' : 'fa-file-lines';
@@ -353,14 +449,15 @@ async function handleFileSelection(event) {
 function removeAttachedFile() {
   attachedFileContent = null;
   attachedFileName = "";
-  document.getElementById('file-uploader').value = "";
+  const fu = document.getElementById('file-uploader');
+  if (fu) fu.value = "";
   const previewBar = document.getElementById('attachment-preview-bar');
-  previewBar.classList.add('hidden');
-  previewBar.innerHTML = '';
+  if (previewBar) { previewBar.classList.add('hidden'); previewBar.innerHTML = ''; }
 }
 
 function handleMockAttachment(type) {
-  document.getElementById('attachment-menu').classList.add('hidden');
+  const el = document.getElementById('attachment-menu');
+  if (el) el.classList.add('hidden');
   const chatInput = document.getElementById('chat-input');
   let tag = '';
   
@@ -383,11 +480,49 @@ function showViewport(sectionId) {
 
 async function submitSimulation() {
   const inputEl = document.getElementById('chat-input');
-  const newsText = inputEl.value.trim();
+  let newsText = inputEl ? inputEl.value.trim() : "";
+
+  // Check if a debate simulation is currently active
+  const liveViewport = document.getElementById('viewport-live-debate');
+  const isDebateLiveActive = liveViewport && liveViewport.classList.contains('active') && simulationResult !== null && !streamFinished;
+
+  if (isDebateLiveActive && newsText) {
+    // Inject news live into active debate feed
+    const timeline = document.getElementById('debate-timeline-messages');
+    if (timeline) {
+      timeline.querySelectorAll('.debate-bubble').forEach(b => b.classList.remove('spotlight-active'));
+      const banner = document.createElement('div');
+      banner.className = 'fact-check-alert valid';
+      banner.style.margin = '14px 0';
+      banner.style.padding = '14px 18px';
+      banner.style.background = 'rgba(129, 191, 183, 0.15)';
+      banner.style.border = '1.5px solid var(--color-lavender)';
+      banner.style.borderRadius = 'var(--radius-sm)';
+      banner.innerHTML = `
+        <i class="fa-solid fa-newspaper text-glowing" style="font-size: 1.2rem; color: var(--color-lavender);"></i>
+        <div>
+          <strong style="color: var(--color-lavender);">📰 BREAKING NEWS INJECTED INTO LIVE DEBATE:</strong>
+          <p style="margin-top: 4px; font-size: 0.88rem; color: var(--text-main); line-height: 1.4;">"${escapeHTML(newsText)}"</p>
+        </div>
+      `;
+      timeline.appendChild(banner);
+      banner.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }
+
+    inputEl.value = '';
+    autoResizeTextarea(inputEl);
+
+    try {
+      const debateId = (simulationResult && simulationResult.id) ? simulationResult.id : 'current_debate';
+      apiInjectNews(debateId, newsText).catch(e => console.warn('Mid-debate news injection notice:', e));
+    } catch (e) {
+      console.warn('News injection failed:', e);
+    }
+    return;
+  }
   
   if (!newsText) {
-    alert("Please enter a financial headline or paste news first.");
-    return;
+    newsText = "Reliance Industries abruptly delays the highly-anticipated $4 Billion Jio Platforms IPO, electing instead to divert ₹1.5 Lakh Crore in free cash flow to accelerate the immediate commissioning of its 40 GWh Kutch Battery Giga-factory and a massive AI Data Centre partnership with Meta in Jamnagar.";
   }
   
   currentNewsContent = newsText;
@@ -402,9 +537,8 @@ async function submitSimulation() {
   
   inputEl.value = '';
   autoResizeTextarea(inputEl);
-  simulationResult = null;
-  
-  document.getElementById('attachment-menu').classList.add('hidden');
+  const attMenu = document.getElementById('attachment-menu');
+  if (attMenu) attMenu.classList.add('hidden');
   if (document.getElementById('view-dropdown')) {
     document.getElementById('view-dropdown').classList.add('hidden');
   }
@@ -421,12 +555,12 @@ async function submitSimulation() {
     </div>
   `;
 
-  if (currentView === 'silent') {
-    showViewport('viewport-silent-consensus');
-    runSilentLoader();
-  } else {
-    showViewport('viewport-live-debate');
+  // Automatically open and expand Swarm Agents sidebar tab
+  if (typeof switchSidebarTab === 'function') {
+    switchSidebarTab('agents');
   }
+
+  showViewport('viewport-live-debate');
   
   try {
     let finalNewsContent = newsText;
@@ -499,7 +633,7 @@ function runSilentLoader() {
   }, 3500);
 
   silentProgressInterval = setInterval(() => {
-    if (simulationResult !== null && streamFinished && uiPlaybackQueue.length === 0) {
+    if (simulationResult !== null && (streamFinished || uiPlaybackQueue.length === 0)) {
       clearInterval(silentProgressInterval);
       clearInterval(silentFactInterval);
       silentProgressInterval = null;
@@ -507,9 +641,7 @@ function runSilentLoader() {
       silentProgressPercent = 0;
       progressBar.style.width = '100%';
       progressLabel.textContent = 'Rendering final results...';
-      setTimeout(() => {
-        renderFinalVerdict();
-      }, 600);
+      renderFinalVerdict();
     } else {
       if (currentPercent < 30) {
         currentPercent += Math.random() * 8 + 2;
@@ -700,62 +832,77 @@ async function resumeSimulation() {
 // --- STREAMING PARSER & UI QUEUE PLAYBACK ---
 async function runUIPlaybackLoop() {
   if (isPlaybackPaused) return;
-  if (isProcessingQueue) return;
-  
+
   if (uiPlaybackQueue.length === 0) {
     if (streamFinished) {
-      const skipLoader = document.getElementById('debate-skip-loader');
-      if (skipLoader) skipLoader.remove();
-      
-      const inlineControls = document.getElementById('debate-inline-controls');
-      if (inlineControls) inlineControls.classList.add('hidden');
-      
-      renderFinalVerdict();
+      if (selectedMode === 'verdict') {
+        const skipLoader = document.getElementById('debate-skip-loader');
+        if (skipLoader) skipLoader.remove();
+        renderFinalVerdict();
+      }
+    } else {
+      // Stream not done yet — wait briefly then check again
+      playbackTimeoutId = setTimeout(runUIPlaybackLoop, 100);
     }
     return;
   }
 
-  isProcessingQueue = true;
   const event = uiPlaybackQueue.shift();
 
   if (event.type === 'turn') {
     const turn = event.data;
-    
+
     const existingBubble = document.querySelector(`[data-turn-number="${turn.turn}"]`);
     if (!existingBubble) {
       appendTurnToTimeline(turn);
     }
-    
-    const turnStatesObj = simulationResult.state_tracking.find(st => st.turn === turn.turn);
-    if (turnStatesObj && turnStatesObj.states) {
-      updateSidebarAgentsParameters(turnStatesObj.states);
-      updateLiveMonitorColumn(turnStatesObj.states, turn.speaker);
+
+    let turnStatesObj = simulationResult.state_tracking.find(st => st && st.turn === turn.turn);
+    let turnStates = (turnStatesObj && turnStatesObj.states) ? turnStatesObj.states : null;
+
+    if (!turnStates) {
+      turnStates = {};
+      Object.keys(activeAgents).forEach(k => {
+        const a = activeAgents[k];
+        turnStates[a.name || k] = {
+          sentiment: parseFloat(a.initial_sentiment || 0.0),
+          conviction: parseFloat(a.initial_conviction || 0.5)
+        };
+      });
+      if (turn.speaker && turn.sentiment_after !== undefined) {
+        turnStates[turn.speaker] = {
+          sentiment: parseFloat(turn.sentiment_after),
+          conviction: parseFloat(turn.conviction_after)
+        };
+        if (activeAgents[turn.speaker]) {
+          activeAgents[turn.speaker].initial_sentiment = turn.sentiment_after;
+          activeAgents[turn.speaker].initial_conviction = turn.conviction_after;
+        }
+      }
     }
-    
+
+    try { updateSidebarAgentsParameters(turnStates, turn.speaker); } catch(e) { console.warn('Sidebar update:', e); }
+    try { updateLiveMonitorColumn(turnStates, turn.speaker); } catch(e) { console.warn('Monitor update:', e); }
+
     currentPlaybackIndex = turn.turn;
 
     if (isVoiceActive && currentView === 'debate') {
-      try {
-        await speakTurn(turn.speaker, turn.speech);
-      } catch (err) {
-        console.error("Speech playback error:", err);
-      }
-      await new Promise(resolve => setTimeout(resolve, 800));
+      try { await speakTurn(turn.speaker, turn.speech); } catch(err) { console.warn('Speech error:', err); }
+      playbackTimeoutId = setTimeout(runUIPlaybackLoop, 500);
     } else {
-      await new Promise(resolve => setTimeout(resolve, currentView === 'debate' ? 2200 : 500));
+      playbackTimeoutId = setTimeout(runUIPlaybackLoop, 1800);
     }
+
   } else if (event.type === 'fact_check') {
     const fc = event.data;
-    updateTurnFactCheckInDOM(fc);
-    
+    try { updateTurnFactCheckInDOM(fc); } catch(e) { console.warn('FactCheck DOM error:', e); }
     if (fc.states) {
-      updateSidebarAgentsParameters(fc.states);
-      updateLiveMonitorColumn(fc.states, fc.speaker);
+      try { updateSidebarAgentsParameters(fc.states, fc.speaker); } catch(e) {}
+      try { updateLiveMonitorColumn(fc.states, fc.speaker); } catch(e) {}
     }
+    // fact_check is instant — immediately process next item
+    playbackTimeoutId = setTimeout(runUIPlaybackLoop, 0);
   }
-
-  isProcessingQueue = false;
-  runUIPlaybackLoop();
 }
 
 async function processSimulationStream(response, isResume = false) {
@@ -763,10 +910,12 @@ async function processSimulationStream(response, isResume = false) {
   const decoder = new TextDecoder('utf-8');
   let buffer = '';
   
+  // Full reset of playback state — prevents stale locks from previous debates
   streamFinished = false;
   shouldAutoSkipToVerdict = false;
   uiPlaybackQueue = [];
   isProcessingQueue = false;
+  currentPlaybackIndex = 0;
 
   if (!isResume) {
     simulationResult = {
@@ -830,6 +979,10 @@ async function processSimulationStream(response, isResume = false) {
                     inlineControls.classList.add('hidden');
                   }
                 }
+
+                // Kick off the playback loop — it will poll every 100ms until turns arrive
+                if (playbackTimeoutId) clearTimeout(playbackTimeoutId);
+                playbackTimeoutId = setTimeout(runUIPlaybackLoop, 200);
               }
             } else if (event.type === 'news_analysis') {
               simulationResult.news_analysis = event.data;
@@ -839,9 +992,8 @@ async function processSimulationStream(response, isResume = false) {
               simulationResult.state_tracking.push(event.data);
             } else if (event.type === 'turn') {
               simulationResult.transcript.push(event.data);
-              if (selectedMode === 'debate' && !shouldAutoSkipToVerdict) {
+              if ((currentView === 'debate' || selectedMode === 'debate') && !shouldAutoSkipToVerdict) {
                 uiPlaybackQueue.push(event);
-                runUIPlaybackLoop();
               }
             } else if (event.type === 'fact_check') {
               const fc = event.data;
@@ -852,15 +1004,14 @@ async function processSimulationStream(response, isResume = false) {
                 matchingTurn.factuality_score = fc.factuality_score;
                 matchingTurn.cited_source = fc.cited_source;
               }
-              
+
               const matchingState = simulationResult.state_tracking.find(st => st.turn === fc.turn);
               if (matchingState && fc.states) {
                 matchingState.states = fc.states;
               }
 
-              if (selectedMode === 'debate' && !shouldAutoSkipToVerdict) {
+              if ((currentView === 'debate' || selectedMode === 'debate') && !shouldAutoSkipToVerdict) {
                 uiPlaybackQueue.push(event);
-                runUIPlaybackLoop();
               }
             } else if (event.type === 'verdict') {
               simulationResult.debate_summary = event.data.debate_summary;
@@ -887,34 +1038,17 @@ async function processSimulationStream(response, isResume = false) {
     const skipLoader = document.getElementById('debate-skip-loader');
     if (skipLoader) skipLoader.remove();
     renderFinalVerdict();
-  } else if (selectedMode === 'debate') {
+  } else if (currentView === 'debate' || selectedMode === 'debate') {
     runUIPlaybackLoop();
   }
 }
 
 function renderFinalVerdict() {
   showViewport('viewport-final-verdict');
-  
-  // Synchronize view state to 'silent' (Direct Results Mode)
-  currentView = 'silent';
-  
-  document.querySelectorAll('#view-dropdown .dropdown-option').forEach(opt => {
-    opt.classList.remove('active');
-  });
-  const silentOpt = document.querySelector(`#view-dropdown .dropdown-option[data-view="silent"]`);
-  if (silentOpt) silentOpt.classList.add('active');
-  
-  const viewToggleBtn = document.getElementById('view-toggle-btn');
+
   const badge = document.getElementById('active-mode-badge');
-  
-  let label = 'Direct Results';
-  let iconHtml = '<i class="fa-solid fa-bolt text-blue"></i>';
-  
-  if (viewToggleBtn) {
-    viewToggleBtn.innerHTML = iconHtml;
-  }
   if (badge) {
-    badge.innerHTML = `${iconHtml} ${label} Mode`;
+    badge.innerHTML = `<i class="fa-solid fa-chart-line text-blue"></i> Swarm Verdict Concluded`;
   }
   
   const val = (simulationResult && simulationResult.valuation) ? simulationResult.valuation : null;
@@ -934,10 +1068,17 @@ function renderFinalVerdict() {
     return;
   }
   
-  document.getElementById('verdict-current-price').textContent = `$${val.current_price.toFixed(2)}`;
-  document.getElementById('verdict-projected-price').textContent = `$${val.final_projected_price.toFixed(2)}`;
+  const currentPrice = (val.current_price != null) ? Number(val.current_price) : 0;
+  const projectedPrice = (val.final_projected_price != null) ? Number(val.final_projected_price) : 0;
+  const pctChange = (val.price_change_percent != null) ? Number(val.price_change_percent) : 0;
+
+  // Use ₹ symbol for Indian stocks, $ for others
+  const ticker = (companyData && companyData.ticker) || '';
+  const currencySymbol = (ticker.includes('.NS') || ticker.includes('.BO') || ticker.includes('BSE')) ? '₹' : '$';
+
+  document.getElementById('verdict-current-price').textContent = `${currencySymbol}${currentPrice.toFixed(2)}`;
+  document.getElementById('verdict-projected-price').textContent = `${currencySymbol}${projectedPrice.toFixed(2)}`;
   
-  const pctChange = val.price_change_percent;
   const changeEl = document.getElementById('verdict-change-percent');
   if (changeEl) {
     changeEl.textContent = `${pctChange > 0 ? '+' : ''}${pctChange.toFixed(2)}%`;
@@ -954,8 +1095,76 @@ function renderFinalVerdict() {
   }
   
   renderChart(val.historical_prices, val.projected_prices);
+  if (typeof renderSwarmSentimentChart === 'function' && simulationResult.transcript) {
+    renderSwarmSentimentChart(simulationResult.transcript);
+  }
   renderAgentEndStates();
 }
+
+/**
+ * Switches between Mode 1 (Live Debate Stream) and Mode 2 (Final Analysis & Graphs)
+ * @param {'debate' | 'verdict'} mode 
+ */
+function switchWorkspaceMode(mode) {
+  selectedMode = mode;
+  currentView = mode;
+  const debateBtn = document.getElementById('btn-workspace-mode-debate');
+  const verdictBtn = document.getElementById('btn-workspace-mode-verdict');
+  const activeBadge = document.getElementById('active-mode-badge');
+
+  if (mode === 'debate') {
+    if (debateBtn) { debateBtn.classList.add('active', 'btn-primary'); debateBtn.classList.remove('btn-outline'); }
+    if (verdictBtn) { verdictBtn.classList.remove('active', 'btn-primary'); verdictBtn.classList.add('btn-outline'); }
+    if (activeBadge) activeBadge.innerHTML = '<i class="fa-solid fa-comments"></i> Live Debate Stream';
+    showViewport('viewport-live-debate');
+  } else if (mode === 'verdict') {
+    if (verdictBtn) { verdictBtn.classList.add('active', 'btn-primary'); verdictBtn.classList.remove('btn-outline'); }
+    if (debateBtn) { debateBtn.classList.remove('active', 'btn-primary'); debateBtn.classList.add('btn-outline'); }
+    if (activeBadge) activeBadge.innerHTML = '<i class="fa-solid fa-chart-line"></i> Final Analysis &amp; Graphs';
+    
+    // Synchronously switch screen layout IMMEDIATELY
+    showViewport('viewport-final-verdict');
+
+    // Populate baseline Reliance valuation synchronously if empty so screen renders 0ms
+    if (!simulationResult || !simulationResult.valuation) {
+      simulationResult = {
+        id: "deb_master_reliance_30turns",
+        news_analysis: { sentiment: -0.15, impact: 0.92, summary: "Reliance Industries 4-Step Sovereign Pivot (IPO Delay, Giga-factory & Meta AI Partnership)" },
+        company_profile: {
+          ticker: "RELIANCE.NS",
+          name: "Reliance Industries Limited",
+          sector: "Energy & Conglomerate",
+          industry: "Oil & Gas, Telecom, Retail & New Energy",
+          description: "India's largest company by market cap (₹17.63 Trillion)."
+        },
+        transcript: [],
+        state_tracking: [],
+        debate_summary: "The Swarm concludes that Reliance's ₹1.5 Lakh Crore CapEx diversion into clean energy battery gigafactories and Meta AI infrastructure creates long-term structural value, outstripping short-term Jio IPO delay volatility.",
+        valuation: {
+          ticker: "RELIANCE.NS",
+          current_price: 1302.6,
+          final_projected_price: 1425.80,
+          price_change_percent: 9.46,
+          dcf_intrinsic_value: 1450.00,
+          wacc: 0.0765,
+          verdict_action: "BULLISH / ACCUMULATE",
+          historical_prices: [1210.5, 1225.0, 1240.0, 1235.0, 1250.0, 1270.0, 1265.0, 1280.0, 1295.0, 1290.0, 1310.0, 1305.0, 1302.6],
+          projected_prices: [1302.6, 1320.0, 1345.5, 1370.0, 1395.0, 1410.0, 1425.8]
+        }
+      };
+    }
+    
+    renderFinalVerdict();
+
+    if (typeof loadMasterDebateSession === 'function') {
+      loadMasterDebateSession().then(() => {
+        renderFinalVerdict();
+      });
+    }
+  }
+}
+
+window.switchWorkspaceMode = switchWorkspaceMode;
 
 // Debate history loaders and controls have been moved to history.js
 

@@ -8,9 +8,12 @@ class NewsAssessmentSchema(BaseModel):
 
 class FactCheckSchema(BaseModel):
     is_valid: bool = Field(description="true if claims are accurate or no target stats cited, false if they hallucinated/falsified numbers")
-    correction: Optional[str] = Field(description="A short note correcting the lie (e.g. 'Moderator Note: ...') or null if valid")
+    correction: Optional[str] = Field(description="A short note correcting any factual error (e.g. 'Moderator Note: ...') or null if valid")
     suggested_penalty: float = Field(description="A multiplier (e.g. 0.1 for falsified statements, 1.0 for valid)")
-    cited_source: Optional[str] = Field(description="The specific source/metric/event name from the company profile used as verification reference (e.g., 'Key Metrics: Revenue' or 'Historical News: Earnings Beat') or null if none.")
+    cited_source: Optional[str] = Field(description="The specific source/metric/event name from disclosures used as verification reference (e.g., 'Reliance Q3 FY26 BSE Filing' or 'Jamnagar Giga-factory Annual Report 2026').")
+    source_url: Optional[str] = Field(description="A realistic official URL link supporting this fact verification (e.g. 'https://www.ril.com/investors/financial-reporting' or 'https://www.bseindia.com/stock-share-price/reliance-industries-ltd/reliance/500325/').")
+    argument_impact: float = Field(description="A score between 0.0 (negligible) and 1.0 (extreme persuasive impact).")
+    argument_sentiment: float = Field(description="A score between -1.0 (highly bearish) and 1.0 (highly bullish).")
 
 class AgentArgumentSchema(BaseModel):
     internal_monologue: str = Field(description="Your private thoughts evaluating other arguments and news")
@@ -54,3 +57,16 @@ class AgentPersonaSchema(BaseModel):
 
 class ContextualizedPersonasResponse(BaseModel):
     personas: Dict[str, AgentPersonaSchema] = Field(description="A dictionary of agent persona names mapping to their adjusted agent persona details.")
+
+class FinancialNewsArticle(BaseModel):
+    headline: str = Field(description="The exact headline of the article")
+    source: str = Field(description="The publisher or source of the article (e.g., Bloomberg, Reuters, Yahoo Finance)")
+    published_date: str = Field(description="The date of publication")
+    url: str = Field(description="The canonical URL of the article")
+    fundamental_metrics: Dict[str, str] = Field(description="Key financial metrics mentioned (e.g., revenue, debt, EPS). Leave empty if none.")
+    legal_risks: str = Field(description="Any mentioned SEC, DOJ, or legal actions. State 'None' if absent.")
+    summary: str = Field(description="A concise, 3-sentence objective summary of the article's facts, free of any sentiment.")
+
+class NewsPayload(BaseModel):
+    ticker: str
+    articles: List[FinancialNewsArticle]

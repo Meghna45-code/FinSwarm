@@ -97,6 +97,17 @@ async function apiResumeSimulation(newsContent, maxRounds, customAgents, environ
 }
 
 /**
+ * Fetches the pre-built Reliance Industries verdict & valuation directly.
+ */
+async function apiGetRelianceVerdict() {
+  const res = await fetch(`${API_BASE}/api/reliance-verdict`, {
+    headers: { ...getApiKeyHeader() }
+  });
+  if (!res.ok) throw new Error("Failed to fetch Reliance verdict");
+  return await res.json();
+}
+
+/**
  * Autofills blank fields of a custom agent persona.
  */
 async function apiAutofillAgent(agent, environmentalVariables, companyProfile) {
@@ -132,6 +143,29 @@ async function apiContextualizePersonas(environmentalVariables, companyProfile) 
     })
   });
   if (!res.ok) throw new Error("Contextualization failed");
+  return await res.json();
+}
+
+/**
+ * Injects mid-debate news into an active simulation session.
+ */
+async function apiInjectNews(debateId, injectedNews) {
+  const token = localStorage.getItem('finswarm_access_token');
+  const headers = { 
+    'Content-Type': 'application/json',
+    ...getApiKeyHeader()
+  };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  
+  const res = await fetch(`${API_BASE}/api/inject_news`, {
+    method: 'POST',
+    headers: headers,
+    body: JSON.stringify({
+      debate_id: debateId,
+      injected_news: injectedNews
+    })
+  });
+  if (!res.ok) throw new Error("Mid-debate news injection failed");
   return await res.json();
 }
 

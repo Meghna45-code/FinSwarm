@@ -1,0 +1,161 @@
+{
+  "total_agents": 14,
+  "passed": 14,
+  "failed": 0,
+  "scorecard": [
+    {
+      "agent": "Algorithmic Quantitative Trader",
+      "category": "Analytical",
+      "fpb_accuracy": 100.0,
+      "fiqa_accuracy": 100.0,
+      "finqa_accuracy": 100.0,
+      "overall_accuracy": 100.0,
+      "target_range": "85% - 100%",
+      "status": "PASS",
+      "recommendation": "PASS: Persona system prompt is mathematically validated and persona-consistent."
+    },
+    {
+      "agent": "Institutional Value Investor",
+      "category": "Analytical",
+      "fpb_accuracy": 100.0,
+      "fiqa_accuracy": 100.0,
+      "finqa_accuracy": 100.0,
+      "overall_accuracy": 100.0,
+      "target_range": "80% - 100%",
+      "status": "PASS",
+      "recommendation": "PASS: Persona system prompt is mathematically validated and persona-consistent."
+    },
+    {
+      "agent": "Macro Economist",
+      "category": "Analytical",
+      "fpb_accuracy": 100.0,
+      "fiqa_accuracy": 100.0,
+      "finqa_accuracy": 100.0,
+      "overall_accuracy": 100.0,
+      "target_range": "80% - 100%",
+      "status": "PASS",
+      "recommendation": "PASS: Persona system prompt is mathematically validated and persona-consistent."
+    },
+    {
+      "agent": "Regulatory Compliance Watchdog",
+      "category": "Analytical",
+      "fpb_accuracy": 100.0,
+      "fiqa_accuracy": 100.0,
+      "finqa_accuracy": 100.0,
+      "overall_accuracy": 100.0,
+      "target_range": "80% - 100%",
+      "status": "PASS",
+      "recommendation": "PASS: Persona system prompt is mathematically validated and persona-consistent."
+    },
+    {
+      "agent": "Industry Tech Expert",
+      "category": "Analytical",
+      "fpb_accuracy": 100.0,
+      "fiqa_accuracy": 100.0,
+      "finqa_accuracy": 100.0,
+      "overall_accuracy": 100.0,
+      "target_range": "75% - 100%",
+      "status": "PASS",
+      "recommendation": "PASS: Persona system prompt is mathematically validated and persona-consistent."
+    },
+    {
+      "agent": "ESG Specialist",
+      "category": "Analytical",
+      "fpb_accuracy": 100.0,
+      "fiqa_accuracy": 100.0,
+      "finqa_accuracy": 66.7,
+      "overall_accuracy": 90.0,
+      "target_range": "75% - 100%",
+      "status": "PASS",
+      "recommendation": "PASS: Persona system prompt is mathematically validated and persona-consistent."
+    },
+    {
+      "agent": "Dividend Growth Investor",
+      "category": "Structural",
+      "fpb_accuracy": 100.0,
+      "fiqa_accuracy": 100.0,
+      "finqa_accuracy": 66.7,
+      "overall_accuracy": 90.0,
+      "target_range": "70% - 100%",
+      "status": "PASS",
+      "recommendation": "PASS: Persona system prompt is mathematically validated and persona-consistent."
+    },
+    {
+      "agent": "B2B Supply Chain Partner / Vanguard",
+      "category": "Structural",
+      "fpb_accuracy": 100.0,
+      "fiqa_accuracy": 100.0,
+      "finqa_accuracy": 66.7,
+      "overall_accuracy": 90.0,
+      "target_range": "70% - 100%",
+      "status": "PASS",
+      "recommendation": "PASS: Persona system prompt is mathematically validated and persona-consistent."
+    },
+    {
+      "agent": "Company Insider / Employee",
+      "category": "Structural",
+      "fpb_accuracy": 100.0,
+      "fiqa_accuracy": 100.0,
+      "finqa_accuracy": 66.7,
+      "overall_accuracy": 90.0,
+      "target_range": "65% - 100%",
+      "status": "PASS",
+      "recommendation": "PASS: Persona system prompt is mathematically validated and persona-consistent."
+    },
+    {
+      "agent": "Brand Loyalist / Fanboy",
+      "category": "Behavioral",
+      "fpb_accuracy": 100.0,
+      "fiqa_accuracy": 100.0,
+      "finqa_accuracy": 66.7,
+      "overall_accuracy": 90.0,
+      "target_range": "45% - 100%",
+      "status": "PASS",
+      "recommendation": "PASS: Persona system prompt is mathematically validated and persona-consistent."
+    },
+    {
+      "agent": "Brand Skeptic",
+      "category": "Behavioral",
+      "fpb_accuracy": 100.0,
+      "fiqa_accuracy": 100.0,
+      "finqa_accuracy": 66.7,
+      "overall_accuracy": 90.0,
+      "target_range": "50% - 100%",
+      "status": "PASS",
+      "recommendation": "PASS: Persona system prompt is mathematically validated and persona-consistent."
+    },
+    {
+      "agent": "Aggressive Short-Seller",
+      "category": "Behavioral",
+      "fpb_accuracy": 100.0,
+      "fiqa_accuracy": 100.0,
+      "finqa_accuracy": 66.7,
+      "overall_accuracy": 90.0,
+      "target_range": "50% - 100%",
+      "status": "PASS",
+      "recommendation": "PASS: Persona system prompt is mathematically validated and persona-consistent."
+    },
+    {
+      "agent": "Technical Day Trader",
+      "category": "Behavioral",
+      "fpb_accuracy": 100.0,
+      "fiqa_accuracy": 100.0,
+      "finqa_accuracy": 66.7,
+      "overall_accuracy": 90.0,
+      "target_range": "55% - 100%",
+      "status": "PASS",
+      "recommendation": "PASS: Persona system prompt is mathematically validated and persona-consistent."
+    },
+    {
+      "agent": "Panic-Prone Retail Trader",
+      "category": "Behavioral",
+      "fpb_accuracy": 100.0,
+      "fiqa_accuracy": 100.0,
+      "finqa_accuracy": 66.7,
+      "overall_accuracy": 90.0,
+      "target_range": "40% - 100%",
+      "status": "PASS",
+      "recommendation": "PASS: Persona system prompt is mathematically validated and persona-consistent."
+    }
+  ]
+}

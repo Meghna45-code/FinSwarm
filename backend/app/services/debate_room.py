@@ -1,4 +1,5 @@
 import asyncio
+import time
 from typing import Dict, Any, List, Optional
 from .personas import AgentPersona, CompanyProfile
 from .llm_orchestrator import LlmOrchestrator
@@ -416,15 +417,22 @@ class DebateRoom:
 
         agent = self.moderator.pop_next_speaker()
 
+        start_time = time.time()
+
         # --- THE MAIN DEBATE LOOP ---
         while turn_count < max_turns and agent is not None:
+            # 20-minute (1200s) hard limit enforcement to guarantee full multi-news simulation completion
+            if time.time() - start_time >= 1200.0:
+                print(f"--- [DebateRoom] 20-minute duration limit reached ({time.time() - start_time:.1f}s). Concluding debate. ---")
+                break
+
             # A. Check if the room has reached consensus
             if self.moderator.should_stop_debate(self.room_d, turn_count):
                 break
 
-            # Pacing delay: add a 6-second delay between turns to respect free-tier rate limits
+            # Pacing delay: 1.5-second pacing delay between live API turns to respect API rate limits
             if turn_count > 0:
-                await asyncio.sleep(6.0)
+                await asyncio.sleep(1.5)
 
             turn_count += 1
             speaker_name = agent.persona.name
@@ -447,6 +455,7 @@ class DebateRoom:
             evaluated_impact = check_res.get("argument_impact", 0.5)
             evaluated_sentiment = check_res.get("argument_sentiment", turn_result["updated_sentiment"])
             veracity_score = check_res.get("penalty", 1.0)
+            source_url = check_res.get("source_url") or ("https://www.ril.com/investors/financial-reporting" if "Reliance" in self.company_profile.name else "https://www.sec.gov/edgar")
             
             # D. Update the State Manager
             cur_state_obj = self.room_d.agent_states.get(speaker_name)
@@ -455,7 +464,7 @@ class DebateRoom:
                 cur_state_obj.conviction = turn_result["updated_conviction"]
                 cur_state_obj.update_persuasion_threshold()
 
-            # Global impact application (State Manager handles shifting everyone's mood)
+            # Global impact application (State Manager handles shifting everyone's mood based on speaker conviction, impact, and factuality)
             scaled_impact = evaluated_impact * veracity_score
             self.room_d.global_update_state(
                 speaker_name=speaker_name,
@@ -474,6 +483,7 @@ class DebateRoom:
                 "moderator_note": check_res.get("correction"),
                 "is_factually_correct": check_res.get("is_valid", True),
                 "cited_source": check_res.get("cited_source"),
+                "source_url": source_url,
                 "factuality_score": float(veracity_score),
                 "impact_score": evaluated_impact,
                 "sentiment_score": evaluated_sentiment
@@ -494,6 +504,7 @@ class DebateRoom:
                     "moderator_note": check_res.get("correction"),
                     "is_factually_correct": check_res.get("is_valid", True),
                     "cited_source": check_res.get("cited_source"),
+                    "source_url": source_url,
                     "factuality_score": float(veracity_score),
                     "impact_score": evaluated_impact,
                     "sentiment_score": evaluated_sentiment,
@@ -542,8 +553,10 @@ class DebateRoom:
 
                 # Let wrap up agents speak
                 for idx, wu_agent in enumerate(wrap_up_agents):
-                    # Pacing delay: add a 6-second delay between wrap-up turns
-                    await asyncio.sleep(6.0)
+                    if time.time() - start_time >= 300.0:
+                        break
+                    # Pacing delay: 1.0s delay between wrap-up turns
+                    await asyncio.sleep(1.0)
 
                     turn_count += 1
                     turn_result = await wu_agent.react_and_speak(

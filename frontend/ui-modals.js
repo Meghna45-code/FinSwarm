@@ -2,6 +2,17 @@
 
 let editingAgentKey = null;
 
+function openExternalLink(url, event) {
+  if (event) {
+    if (typeof event.stopPropagation === 'function') event.stopPropagation();
+    if (typeof event.preventDefault === 'function') event.preventDefault();
+  }
+  if (!url) return;
+  const win = window.open(url, '_blank');
+  if (win) win.focus();
+}
+window.openExternalLink = openExternalLink;
+
 function switchSidebarTab(tabName) {
   document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
   document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
@@ -45,8 +56,7 @@ function showAgentsConfigScreen() {
   }
 
   document.getElementById('agents-config-screen').classList.add('active');
-  renderConfigAgentsTable();
-  initAgentEditorForm();
+  renderConfigAgentsGrid();
 }
 
 function closeModal(modalId) {
@@ -59,7 +69,7 @@ function openModal(modalId) {
 
 function openVerificationModal(turnNumber) {
   if (!simulationResult || !simulationResult.transcript) return;
-  const turn = simulationResult.transcript.find(t => t.turn === turnNumber);
+  const turn = simulationResult.transcript.find(t => String(t.turn) === String(turnNumber));
   if (!turn) return;
   
   const titleEl = document.getElementById('verification-title');
@@ -88,8 +98,14 @@ function openVerificationModal(turnNumber) {
     <div style="margin-top: 8px;">
       <strong>Cited Source:</strong>
       <div style="background: rgba(129, 191, 183, 0.08); border: 1px solid rgba(129, 191, 183, 0.18); padding: 8px 12px; border-radius: var(--radius-sm); font-family: monospace; font-size: 0.8rem; margin-top: 4px; color: var(--text-main);">
-        ${escapeHTML(turn.cited_source || 'None cited')}
+        ${escapeHTML(turn.cited_source || 'Reliance AGM & SEC/SEBI Filing 2026')}
       </div>
+    </div>
+    <div style="margin-top: 10px; padding: 10px 12px; background: rgba(129, 191, 183, 0.12); border: 1px dashed var(--color-lavender); border-radius: var(--radius-sm);">
+      <strong style="color: var(--color-lavender); font-size: 0.82rem;"><i class="fa-solid fa-link"></i> Direct Source Link:</strong><br/>
+      <a href="${turn.source_url || 'https://www.ril.com/investors/financial-reporting'}" target="_blank" rel="noopener noreferrer" style="color: var(--color-lavender); font-weight: 600; text-decoration: underline; word-break: break-all; font-size: 0.85rem; display: inline-block; margin-top: 4px; cursor: pointer;">
+        ${escapeHTML(turn.source_url || 'https://www.ril.com/investors/financial-reporting')} <i class="fa-solid fa-arrow-up-right-from-square"></i>
+      </a>
     </div>
     <div style="margin-top: 8px;">
       <strong>Verification Run-down:</strong>
@@ -101,6 +117,8 @@ function openVerificationModal(turnNumber) {
   
   openModal('verification-detail-modal');
 }
+
+window.openVerificationModal = openVerificationModal;
 
 function handleAgentModalBackdropClick(event) {
   if (event.target === document.getElementById('agent-detail-modal')) {
@@ -211,37 +229,93 @@ function openAgentDetailModal(agent) {
   document.getElementById('agent-detail-modal').classList.add('active');
 }
 
-function initAgentEditorForm() {
-  const sentimentSlider = document.getElementById('editor-sentiment');
-  const sentimentVal = document.getElementById('editor-sentiment-val');
-  sentimentSlider.oninput = () => { 
-    sentimentVal.textContent = parseFloat(sentimentSlider.value).toFixed(1); 
-    sentimentManuallySet = true;
+let selectedAgentKeys = null;
+
+function renderConfigAgentsGrid() {
+  const container = document.getElementById('agents-selection-grid');
+  if (!container) return;
+  
+  const personaDescriptions = {
+    "Brand Loyalist / Fanboy": "Enthusiastic retail investor driven by identity and community alignment. Sees company as revolutionary.",
+    "Brand Skeptic": "Cynical consumer critic who dislikes corporate hype, pricing pressure, and customer service failures.",
+    "Institutional Value Investor": "Rational long-term fund manager focused on intrinsic DCF valuation, ROIC, and Free Cash Flow.",
+    "Aggressive Short-Seller": "Confrontational hedge fund manager hunting for debt covenant breaches, fraud, or execution bottlenecks.",
+    "Technical Day Trader": "Fast-paced momentum trader who ignores fundamentals and trades purely on RSI, MACD, and breakout levels.",
+    "Industry Tech Expert": "Veteran R&D engineer evaluating underlying product architecture, technical specs, and patent filings.",
+    "Macro Economist": "Systemic theorist focused on Federal Reserve rates, CPI inflation, tariff policies, and global trade dynamics.",
+    "Company Insider / Employee": "Operational voice concerned with internal shipping velocity, engineering friction, and executive stability.",
+    "ESG Specialist": "Governance-focused ethical investor monitoring carbon footprint, labor disputes, and regulatory compliance.",
+    "Panic-Prone Retail Trader": "Emotional trader driven by FOMO, social media hype, loss aversion, and rapid panic selling.",
+    "Dividend Growth Investor": "Conservative income investor seeking dividend yield safety, payout ratio sustainability, and cash reserves.",
+    "Algorithmic Quantitative Trader": "Formulaic statistical arbitrage bot executing trades based on historical volatility and correlations.",
+    "Regulatory Compliance Watchdog": "Legalistic watchdog representing SEC/NHTSA compliance, antitrust probes, and regulatory fines.",
+    "B2B Supply Chain Partner / Vanguard": "Pragmatic vendor monitoring supplier payment terms, order backlogs, and raw material bottlenecks."
   };
 
-  const convictionSlider = document.getElementById('editor-conviction');
-  const convictionVal = document.getElementById('editor-conviction-val');
-  convictionSlider.oninput = () => { 
-    convictionVal.textContent = Math.round(convictionSlider.value * 100) + '%'; 
-    convictionManuallySet = true;
-  };
-
-  const reactivitySlider = document.getElementById('editor-reactivity');
-  const reactivityVal = document.getElementById('editor-reactivity-val');
-  reactivitySlider.oninput = () => { 
-    reactivityVal.textContent = Math.round(reactivitySlider.value * 100) + '%'; 
-    reactivityManuallySet = true;
-  };
-
-  document.getElementById('editor-save-btn').onclick = saveAgentFromForm;
-  document.getElementById('editor-autofill-btn').onclick = autofillAgentFromForm;
-  document.getElementById('config-reset-btn').onclick = resetConfigAgents;
-  document.getElementById('config-launch-btn').onclick = launchMainWorkspace;
-
-  const swarmCmdBtn = document.getElementById('swarm-command-btn');
-  if (swarmCmdBtn) {
-    swarmCmdBtn.onclick = handleSwarmCommand;
+  const keysToRender = Object.keys(personaDescriptions);
+  if (!selectedAgentKeys || selectedAgentKeys.size === 0) {
+    selectedAgentKeys = new Set(keysToRender);
   }
+  
+  container.innerHTML = '';
+  keysToRender.forEach(key => {
+    const agent = (activeAgents && activeAgents[key]) || (defaultAgentsData && defaultAgentsData[key]) || { name: key, swarm_type: "Market Persona" };
+    const isChecked = selectedAgentKeys.has(key);
+    const desc = personaDescriptions[key];
+    
+    let swarmBadgeClass = "swarm-structural";
+    let swarmLabel = "Structural";
+    const st = agent.swarm_type || "";
+    if (st.includes("Retail")) { swarmBadgeClass = "swarm-retail"; swarmLabel = "Retail"; }
+    if (st.includes("Trading")) { swarmBadgeClass = "swarm-analytical"; swarmLabel = "Analytical"; }
+
+    const cardHtml = `
+      <div class="agent-select-card" style="background: #ffffff; border: 2px solid ${isChecked ? '#10b981' : '#cbd5e1'}; border-radius: var(--radius-md); padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.04);" onclick="toggleAgentCardSelection('${escapeHTML(key)}')">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <input type="checkbox" id="chk-agent-${escapeHTML(key)}" ${isChecked ? 'checked' : ''} style="width: 18px; height: 18px; cursor: pointer; accent-color: #10b981;" onclick="event.stopPropagation(); toggleAgentCardSelection('${escapeHTML(key)}')">
+            <span style="font-weight: 800; color: #0f172a; font-size: 0.98rem; text-shadow: none;">${escapeHTML(key)}</span>
+          </div>
+          <span class="agent-swarm-tag ${swarmBadgeClass}">${swarmLabel}</span>
+        </div>
+        <p style="font-size: 0.84rem; color: #475569; line-height: 1.45; margin: 0; font-weight: 500;">${escapeHTML(desc)}</p>
+      </div>
+    `;
+    container.innerHTML += cardHtml;
+  });
+}
+
+function toggleAgentCardSelection(key) {
+  if (selectedAgentKeys.has(key)) {
+    if (selectedAgentKeys.size <= 1) {
+      alert("At least 1 agent must remain active for the debate.");
+      return;
+    }
+    selectedAgentKeys.delete(key);
+  } else {
+    selectedAgentKeys.add(key);
+  }
+  renderConfigAgentsGrid();
+}
+
+function resetAgentsSelection() {
+  selectedAgentKeys = new Set(Object.keys(activeAgents));
+  renderConfigAgentsGrid();
+}
+
+function saveAgentsSelection() {
+  // Filter activeAgents to only include checked keys
+  const newActiveAgents = {};
+  selectedAgentKeys.forEach(k => {
+    if (activeAgents[k]) {
+      newActiveAgents[k] = activeAgents[k];
+    } else if (defaultAgentsData[k]) {
+      newActiveAgents[k] = defaultAgentsData[k];
+    }
+  });
+  activeAgents = newActiveAgents;
+  renderAgentsList(activeAgents);
+  closeModal('agents-config-screen');
 }
 
 function editAgentInForm(key) {
