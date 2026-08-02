@@ -1,0 +1,11 @@
+.git
+.pytest_cache
+__pycache__
+*.pyc
+*.pyo
+*.h5
+*.db
+tests/
+backend/tests/
+backend/scripts/
+backend/finswarm.db
