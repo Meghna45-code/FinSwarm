@@ -323,5 +323,8 @@ def get_debate_details(debate_id: str, user_email: str = None) -> Dict[str, Any]
     finally:
         conn.close()
 
-# Auto-initialize database on import
-init_db()
+# Auto-initialize database on import — wrapped so read-only FS (Vercel) doesn't crash on import
+try:
+    init_db()
+except Exception as _db_init_err:
+    logger.warning(f"Database init skipped (read-only filesystem or unavailable): {_db_init_err}")

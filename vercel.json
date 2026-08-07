@@ -11,12 +11,18 @@
   ],
   "rewrites": [
     {
-      "source": "/backend/(.*)",
+      "source": "/api/:path*",
       "destination": "/backend/app/main.py"
     },
     {
-      "source": "/(.*)",
+      "source": "/:path*",
       "destination": "/frontend/$1"
     }
-  ]
+  ],
+  "functions": {
+    "backend/app/main.py": {
+      "runtime": "python3.11",
+      "maxDuration": 60
+    }
+  }
 }

@@ -72,19 +72,11 @@ from backend.app.services.llm_client import GeminiLlmClient
 
 app = FastAPI(title="FinSwarm API", version="1.0.0")
 
-# Secure local development CORS configuration
-origins = [
-    "http://localhost:8000",
-    "http://127.0.0.1:8000",
-    "http://[::1]:8000",
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    "http://[::1]:3000",
-]
+# CORS: allow all origins so the Vercel-hosted frontend can reach the serverless API
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -634,7 +626,15 @@ async def run_simulation_endpoint(req: SimulationRequest, email: str = Depends(g
                 print("------------------------------------------")
             except Exception as ex:
                 print(f"--- [API DEBUG] Failed to list models: {ex} ---")
-        llm_client = GeminiLlmClient(api_key=api_key) if api_key else None
+        
+        # Safely construct LLM client — if key is missing, fall back to pre-seeded demo mode
+        llm_client = None
+        if api_key:
+            try:
+                llm_client = GeminiLlmClient(api_key=api_key)
+            except Exception as key_err:
+                print(f"--- [API DEBUG] GeminiLlmClient init failed: {key_err}. Running in demo mode. ---")
+                llm_client = None
         
         if req.custom_agents:
             personas = {}
