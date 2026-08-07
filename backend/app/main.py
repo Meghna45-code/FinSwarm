@@ -972,6 +972,11 @@ def get_reliance_scenario_endpoint():
         logger.exception("Error in get_reliance_scenario_endpoint")
         raise HTTPException(status_code=500, detail=str(e))
 
-# --- STATIC FILES MOUNT ---
-frontend_dir = os.path.join(project_root, "frontend")
-app.mount("/", StaticFiles(directory=frontend_dir, html=True), name="static")
+# --- STATIC FILES MOUNT (local dev only) ---
+# On Vercel, static files are served by @vercel/static — this mount is only for local uvicorn runs
+try:
+    frontend_dir = os.path.join(project_root, "frontend")
+    if os.path.isdir(frontend_dir):
+        app.mount("/", StaticFiles(directory=frontend_dir, html=True), name="static")
+except Exception as _static_err:
+    logger.warning(f"Static files mount skipped (Vercel serverless mode): {_static_err}")
